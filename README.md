@@ -2,4 +2,4 @@
 
     yarn install
 
-    tsc && node src/triangle.js
+    yarn tsc && node src/triangle.js
