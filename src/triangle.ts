@@ -18,7 +18,15 @@ import {
   vkGetPhysicalDeviceProperties,
   vkGetPhysicalDeviceFeatures,
   VkPhysicalDeviceType,
-} from "nvk/generated/1.1.126/darwin";
+  vkGetPhysicalDeviceQueueFamilyProperties,
+  VkQueueFamilyProperties,
+  VkQueueFlagBits,
+  VkDeviceQueueCreateInfo,
+  VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+  VkDeviceCreateInfo,
+  VkDevice,
+  vkCreateDevice,
+} from "nvk/generated/1.1.126/win32";
 
 const VALIDATION_LAYERS = ["VK_LAYER_KHRONOS_validation"];
 
@@ -31,8 +39,8 @@ const VALIDATION_LAYERS = ["VK_LAYER_KHRONOS_validation"];
 
   const validationLayers = getCurrentValidationLayers();
   const instance = createInstance(validationLayers, win);
-
-  pickPhysicalDevice(instance);
+  const physicaDevice = pickPhysicalDevice(instance);
+  const device = createLogicalDevice(physicaDevice, validationLayers);
 
   console.log("drawing..");
   (function drawLoop() {
@@ -83,6 +91,10 @@ function createInstance(validationLayers: string[], win: VulkanWindow) {
   return instance;
 }
 
+function makeArray<T>(Ctor: new () => T, count: number) {
+  return [...Array(count)].map(() => new Ctor());
+}
+
 function pickPhysicalDevice(instance: VkInstance) {
   const deviceCount = { $: 0 };
   vkEnumeratePhysicalDevices(instance, deviceCount, null);
@@ -91,45 +103,125 @@ function pickPhysicalDevice(instance: VkInstance) {
     throw new Error("no devices with Vulkan support");
   }
 
-  const devices = [...Array(deviceCount.$)].map(() => new VkPhysicalDevice());
+  const devices = makeArray(VkPhysicalDevice, deviceCount.$);
   vkEnumeratePhysicalDevices(instance, deviceCount, devices);
 
-  let device = devices.map(recognizeDevice).find((d) => isDeviceSuitable(d));
+  let raitings = devices
+    .map(rateDeviceSuitability)
+    .map((raiting, index) => ({ raiting, index }))
+    .sort((a, b) => b.raiting - a.raiting);
 
-  if (device === undefined) {
+  if (raitings.length === 0 || raitings[0].raiting === 0) {
     throw new Error("failed to find a suitable GPU!");
   }
+
+  return devices[raitings[0].index];
 }
 
-function recognizeDevice(device: VkPhysicalDevice) {
+interface QueueFamilyIndices {
+  graphicsFamily?: number;
+}
+
+function findQueueFamilies(device: VkPhysicalDevice) {
+  const queueFamilyCount = { $: 0 };
+  vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilyCount, null);
+
+  const queueFamilies = makeArray(VkQueueFamilyProperties, queueFamilyCount.$);
+  vkGetPhysicalDeviceQueueFamilyProperties(
+    device,
+    queueFamilyCount,
+    queueFamilies
+  );
+
+  const indices: QueueFamilyIndices = {};
+
+  let i = 0;
+  for (const queueFamily of queueFamilies) {
+    if (queueFamily.queueFlags & VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT) {
+      indices.graphicsFamily = i;
+    }
+
+    i++;
+  }
+
+  return indices;
+}
+
+function rateDeviceSuitability(device: VkPhysicalDevice) {
   const properties = new VkPhysicalDeviceProperties();
   const features = new VkPhysicalDeviceFeatures();
 
   vkGetPhysicalDeviceProperties(device, properties);
   vkGetPhysicalDeviceFeatures(device, features);
 
-  console.log(
-    properties.deviceName,
-    properties.deviceType ===
-      VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
-    features.geometryShader
-  );
+  const queueIndices = findQueueFamilies(device);
 
-  return { properties, features };
+  console.log({
+    deviceName: properties.deviceName,
+    isDiscrete:
+      properties.deviceType ===
+      VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+    geometryShader: features.geometryShader,
+    maxImageDimension2D: properties.limits?.maxImageDimension2D,
+    queueIndices,
+  });
+
+  let score = 0;
+
+  if (queueIndices.graphicsFamily === undefined) {
+    return 0;
+  }
+
+  if (
+    properties.deviceType ==
+    VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+  ) {
+    score += 1000;
+  }
+
+  score += properties.limits?.maxImageDimension2D || 0;
+
+  if (!features.geometryShader) {
+    return 0;
+  }
+
+  return score;
 }
 
-function isDeviceSuitable({
-  properties,
-  features,
-}: {
-  properties: VkPhysicalDeviceProperties;
-  features: VkPhysicalDeviceFeatures;
-}) {
-  return (
-    properties.deviceType ==
-      VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-    features.geometryShader
-  );
+function createLogicalDevice(
+  physicalDevice: VkPhysicalDevice,
+  layers: string[]
+) {
+  const indices = findQueueFamilies(physicalDevice);
+
+  const queueCreateInfo = new VkDeviceQueueCreateInfo();
+  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queueCreateInfo.queueFamilyIndex = indices.graphicsFamily as number;
+  queueCreateInfo.queueCount = 1;
+  queueCreateInfo.pQueuePriorities = new Float32Array([1]);
+
+  const deviceFeatures = new VkPhysicalDeviceFeatures();
+  const deviceCreateInfo = new VkDeviceCreateInfo();
+
+  deviceCreateInfo.pQueueCreateInfos = [queueCreateInfo];
+  deviceCreateInfo.queueCreateInfoCount = 1;
+
+  deviceCreateInfo.pEnabledFeatures = deviceFeatures;
+  deviceCreateInfo.enabledExtensionCount = 0;
+
+  if (layers.length > 0) {
+    deviceCreateInfo.enabledLayerCount = layers.length;
+    deviceCreateInfo.ppEnabledLayerNames = layers;
+  } else {
+    deviceCreateInfo.enabledLayerCount = 0;
+  }
+
+  const device = new VkDevice();
+
+  const result = vkCreateDevice(physicalDevice, deviceCreateInfo, null, device);
+  ASSERT_VK_RESULT(result);
+
+  return device;
 }
 
 function ASSERT_VK_RESULT(result: VkResult) {
@@ -148,9 +240,7 @@ function getAvailableValidationLayers() {
   const layerCount = { $: 0 };
   vkEnumerateInstanceLayerProperties(layerCount, null);
 
-  const availableLayers = [...Array(layerCount.$)].map(
-    () => new VkLayerProperties()
-  );
+  const availableLayers = makeArray(VkLayerProperties, layerCount.$);
   vkEnumerateInstanceLayerProperties(layerCount, availableLayers);
 
   return availableLayers;
