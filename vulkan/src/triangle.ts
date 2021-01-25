@@ -225,6 +225,7 @@ function findQueueFamilies(device: VkPhysicalDevice, surface: VkSurfaceKHR) {
   );
 
   const indices = new QueueFamilyIndices();
+  const presentSupport = { $: false };
 
   let i = 0;
   for (const queueFamily of queueFamilies) {
@@ -232,11 +233,12 @@ function findQueueFamilies(device: VkPhysicalDevice, surface: VkSurfaceKHR) {
       indices.graphicsFamily = i;
     }
 
-    const presentSupport = { $: false };
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
+    if (!presentSupport.$) {
+      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
 
-    if (presentSupport.$) {
-      indices.presentFamily = i;
+      if (presentSupport.$) {
+        indices.presentFamily = i;
+      }
     }
 
     i++;
@@ -297,7 +299,7 @@ function ASSERT_VK_RESULT(result: VkResult) {
 (function () {
   const renderer = new Renderer();
 
-  console.log("Renderer consist of = ", Object.keys(renderer));
+  console.log("Renderer consist of =", Object.keys(renderer));
 
   console.log("drawing..");
   (function drawLoop() {
