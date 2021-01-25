@@ -30,9 +30,22 @@ import {
   vkGetDeviceQueue,
   VkSurfaceKHR,
   vkGetPhysicalDeviceSurfaceSupportKHR,
+  vkEnumerateDeviceExtensionProperties,
+  VkExtensionProperties,
+  VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+  VkSurfaceCapabilitiesKHR,
+  VkPresentModeKHR,
+  VkSurfaceFormatKHR,
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR,
+  vkGetPhysicalDeviceSurfaceFormatsKHR,
+  vkGetPhysicalDeviceSurfacePresentModesKHR,
 } from "nvk/generated/1.1.126/win32";
 
-const VALIDATION_LAYERS = ["VK_LAYER_KHRONOS_validation"];
+const VALIDATION_LAYERS = ["VK_LAYER_LUNARG_standard_validation"];
+
+const DEVICE_EXTENSIONS = ([
+  VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+] as unknown[]) as string[];
 
 class QueueFamilyIndices {
   graphicsFamily?: number;
@@ -42,6 +55,52 @@ class QueueFamilyIndices {
     return (
       this.graphicsFamily !== undefined && this.presentFamily !== undefined
     );
+  }
+}
+
+export class SwapChainSupportDetails {
+  public capabilities: VkSurfaceCapabilitiesKHR;
+  public formats: VkSurfaceFormatKHR[];
+  public presentModes: Int32Array;
+
+  constructor(device: VkPhysicalDevice, surface: VkSurfaceKHR) {
+    this.capabilities = new VkSurfaceCapabilitiesKHR();
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+      device,
+      surface,
+      this.capabilities
+    );
+
+    const formatCount = { $: 0 };
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, formatCount, null);
+
+    this.formats = makeArray(VkSurfaceFormatKHR, formatCount.$);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(
+      device,
+      surface,
+      formatCount,
+      this.formats
+    );
+
+    const presentModeCount = { $: 0 };
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+      device,
+      surface,
+      presentModeCount,
+      null
+    );
+
+    this.presentModes = new Int32Array(presentModeCount.$);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+      device,
+      surface,
+      presentModeCount,
+      this.presentModes
+    );
+  }
+
+  isComplete() {
+    return this.presentModes.length > 0 && this.formats.length > 0;
   }
 }
 
@@ -79,6 +138,8 @@ class Renderer {
     this.validationLayers = VALIDATION_LAYERS.filter((l) =>
       availableLayers.some((al) => al.layerName === l)
     );
+
+    console.log("validationLayers =", this.validationLayers);
   }
 
   initInstance() {
@@ -94,12 +155,13 @@ class Renderer {
     if (this.validationLayers.length > 0) {
       createInfo.enabledLayerCount = this.validationLayers.length;
       createInfo.ppEnabledLayerNames = this.validationLayers;
+
+      console.log(createInfo.ppEnabledLayerNames);
     } else {
       createInfo.enabledLayerCount = 0;
     }
 
     console.log("extensions", createInfo.ppEnabledExtensionNames);
-    console.log("layers", createInfo.ppEnabledLayerNames);
 
     const instance = new VkInstance();
 
@@ -167,7 +229,8 @@ class Renderer {
     deviceCreateInfo.queueCreateInfoCount = queueCreateInfos.length;
 
     deviceCreateInfo.pEnabledFeatures = deviceFeatures;
-    deviceCreateInfo.enabledExtensionCount = 0;
+    deviceCreateInfo.enabledExtensionCount = DEVICE_EXTENSIONS.length;
+    deviceCreateInfo.ppEnabledExtensionNames = DEVICE_EXTENSIONS;
 
     if (this.validationLayers.length > 0) {
       deviceCreateInfo.enabledLayerCount = this.validationLayers.length;
@@ -225,20 +288,25 @@ function findQueueFamilies(device: VkPhysicalDevice, surface: VkSurfaceKHR) {
   );
 
   const indices = new QueueFamilyIndices();
-  const presentSupport = { $: false };
 
   let i = 0;
   for (const queueFamily of queueFamilies) {
-    if (queueFamily.queueFlags & VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT) {
+    if (
+      indices.graphicsFamily === undefined &&
+      queueFamily.queueFlags & VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT
+    ) {
       indices.graphicsFamily = i;
     }
 
-    if (!presentSupport.$) {
-      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
+    const presentSupport = { $: false };
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
 
-      if (presentSupport.$) {
-        indices.presentFamily = i;
-      }
+    if (
+      presentSupport.$ &&
+      indices.presentFamily === undefined &&
+      indices.graphicsFamily !== i
+    ) {
+      indices.presentFamily = i;
     }
 
     i++;
@@ -258,20 +326,19 @@ function rateDeviceSuitability(
   vkGetPhysicalDeviceFeatures(device, features);
 
   const queueIndices = findQueueFamilies(device, surface);
-
-  console.log({
-    deviceName: properties.deviceName,
-    isDiscrete:
-      properties.deviceType ===
-      VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
-    geometryShader: features.geometryShader,
-    maxImageDimension2D: properties.limits?.maxImageDimension2D,
-    queueIndices,
-  });
+  const swapChainDetails = new SwapChainSupportDetails(device, surface);
 
   let score = 0;
 
   if (!queueIndices.isComplete()) {
+    return 0;
+  }
+
+  if (!checkDeviceExtensionSupport(device)) {
+    return 0;
+  }
+
+  if (!swapChainDetails.isComplete()) {
     return 0;
   }
 
@@ -288,7 +355,46 @@ function rateDeviceSuitability(
     return 0;
   }
 
+  console.log({
+    deviceName: properties.deviceName,
+    isDiscrete:
+      properties.deviceType ===
+      VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+    geometryShader: features.geometryShader,
+    maxImageDimension2D: properties.limits?.maxImageDimension2D,
+    queueIndices,
+    swapChainDetails,
+  });
+
   return score;
+}
+
+function checkDeviceExtensionSupport(device: VkPhysicalDevice) {
+  const extensionCount = { $: 0 };
+  vkEnumerateDeviceExtensionProperties(device, null, extensionCount, null);
+
+  const availableExtensions = makeArray(
+    VkExtensionProperties,
+    extensionCount.$
+  );
+  vkEnumerateDeviceExtensionProperties(
+    device,
+    null,
+    extensionCount,
+    availableExtensions
+  );
+
+  const availableExtensionNames = availableExtensions.map(
+    (ext) => ext.extensionName
+  );
+
+  for (const name of DEVICE_EXTENSIONS) {
+    if (!availableExtensionNames.includes(name)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function ASSERT_VK_RESULT(result: VkResult) {
