@@ -347,6 +347,7 @@ class Renderer {
 
     createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
     createInfo.clipped = true;
 
     this.swapChain = new VkSwapchainKHR();
