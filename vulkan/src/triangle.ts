@@ -34,11 +34,23 @@ import {
   VkExtensionProperties,
   VK_KHR_SWAPCHAIN_EXTENSION_NAME,
   VkSurfaceCapabilitiesKHR,
-  VkPresentModeKHR,
   VkSurfaceFormatKHR,
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR,
   vkGetPhysicalDeviceSurfaceFormatsKHR,
   vkGetPhysicalDeviceSurfacePresentModesKHR,
+  VK_FORMAT_B8G8R8A8_SRGB,
+  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+  VK_PRESENT_MODE_MAILBOX_KHR,
+  VK_PRESENT_MODE_FIFO_KHR,
+  VkExtent2D,
+  VkSwapchainCreateInfoKHR,
+  VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+  VK_SHARING_MODE_CONCURRENT,
+  VK_SHARING_MODE_EXCLUSIVE,
+  VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+  VkSwapchainKHR,
+  vkCreateSwapchainKHR,
 } from "nvk/generated/1.1.126/win32";
 
 const VALIDATION_LAYERS = ["VK_LAYER_LUNARG_standard_validation"];
@@ -102,6 +114,27 @@ export class SwapChainSupportDetails {
   isComplete() {
     return this.presentModes.length > 0 && this.formats.length > 0;
   }
+
+  chooseSwapSurfaceFormat() {
+    for (const availableFormat of this.formats) {
+      if (
+        availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+        availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+      ) {
+        return availableFormat;
+      }
+    }
+    return this.formats[0];
+  }
+
+  chooseSwapPresentMode() {
+    for (const availableMode of this.presentModes) {
+      if (availableMode === VK_PRESENT_MODE_MAILBOX_KHR) {
+        return availableMode;
+      }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
+  }
 }
 
 class Renderer {
@@ -113,6 +146,7 @@ class Renderer {
   graphicsQueue!: VkQueue;
   presentQueue!: VkQueue;
   surface!: VkSurfaceKHR;
+  swapChain!: VkSwapchainKHR;
 
   constructor() {
     this.win = new VulkanWindow({
@@ -121,11 +155,14 @@ class Renderer {
       title: "nvk triangle",
     });
 
+    this.win.height;
+
     this.initValidationLayers();
     this.initInstance();
     this.initSurface();
     this.initPhysicalDevice();
     this.initLogicalDevice();
+    this.initSwapChain();
   }
 
   initValidationLayers() {
@@ -259,6 +296,65 @@ class Renderer {
     this.presentQueue = new VkQueue();
     vkGetDeviceQueue(device, indices.presentFamily!, 0, this.presentQueue);
   }
+
+  initSwapChain() {
+    const swapChainSupport = new SwapChainSupportDetails(
+      this.physicalDevice,
+      this.surface
+    );
+
+    const surfaceFormat = swapChainSupport.chooseSwapSurfaceFormat();
+    const presentMode = swapChainSupport.chooseSwapPresentMode();
+    const extent = new VkExtent2D();
+
+    extent.width = this.win.width;
+    extent.height = this.win.height;
+
+    let imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+    if (
+      swapChainSupport.capabilities.maxImageCount > 0 &&
+      imageCount > swapChainSupport.capabilities.maxImageCount
+    ) {
+      imageCount = swapChainSupport.capabilities.maxImageCount;
+    }
+
+    const createInfo = new VkSwapchainCreateInfoKHR();
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = this.surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    const indices = findQueueFamilies(this.physicalDevice, this.surface);
+    const queueFamilyIndices = [
+      indices.graphicsFamily!,
+      indices.presentFamily!,
+    ];
+
+    if (indices.graphicsFamily != indices.presentFamily) {
+      createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+      createInfo.queueFamilyIndexCount = 2;
+      createInfo.pQueueFamilyIndices = new Uint32Array(queueFamilyIndices);
+    } else {
+      createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+      createInfo.queueFamilyIndexCount = 0; // Optional
+      createInfo.pQueueFamilyIndices = null; // Optional
+    }
+
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.clipped = true;
+
+    this.swapChain = new VkSwapchainKHR();
+
+    ASSERT_VK_RESULT(
+      vkCreateSwapchainKHR(this.device, createInfo, null, this.swapChain)
+    );
+  }
 }
 
 function createAppInfo() {
@@ -298,15 +394,13 @@ function findQueueFamilies(device: VkPhysicalDevice, surface: VkSurfaceKHR) {
       indices.graphicsFamily = i;
     }
 
-    const presentSupport = { $: false };
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
+    if (indices.presentFamily === undefined) {
+      const presentSupport = { $: false };
+      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
 
-    if (
-      presentSupport.$ &&
-      indices.presentFamily === undefined &&
-      indices.graphicsFamily !== i
-    ) {
-      indices.presentFamily = i;
+      if (presentSupport.$) {
+        indices.presentFamily = i;
+      }
     }
 
     i++;
@@ -363,7 +457,6 @@ function rateDeviceSuitability(
     geometryShader: features.geometryShader,
     maxImageDimension2D: properties.limits?.maxImageDimension2D,
     queueIndices,
-    swapChainDetails,
   });
 
   return score;
