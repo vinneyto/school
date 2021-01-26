@@ -53,7 +53,7 @@ import {
   vkCreateSwapchainKHR,
 } from "nvk/generated/1.1.126/win32";
 
-const VALIDATION_LAYERS = ["VK_LAYER_LUNARG_standard_validation"];
+const VALIDATION_LAYERS = ["VK_LAYER_KHRONOS_validation"];
 
 const DEVICE_EXTENSIONS = ([
   VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -176,6 +176,11 @@ class Renderer {
       availableLayers.some((al) => al.layerName === l)
     );
 
+    console.log(
+      "availableValidationLayers =",
+      availableLayers.map((l) => l.layerName)
+    );
+
     console.log("validationLayers =", this.validationLayers);
   }
 
@@ -192,8 +197,6 @@ class Renderer {
     if (this.validationLayers.length > 0) {
       createInfo.enabledLayerCount = this.validationLayers.length;
       createInfo.ppEnabledLayerNames = this.validationLayers;
-
-      console.log(createInfo.ppEnabledLayerNames);
     } else {
       createInfo.enabledLayerCount = 0;
     }
@@ -395,7 +398,10 @@ function findQueueFamilies(device: VkPhysicalDevice, surface: VkSurfaceKHR) {
       indices.graphicsFamily = i;
     }
 
-    if (indices.presentFamily === undefined) {
+    if (
+      indices.presentFamily === undefined ||
+      indices.presentFamily === indices.graphicsFamily
+    ) {
       const presentSupport = { $: false };
       vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, presentSupport);
 
