@@ -1,5 +1,5 @@
 {
-  "name": "vulkan-tutorial",
+  "name": "algorithms",
   "version": "1.0.0",
   "main": "src/index.js",
   "repository": "https://github.com/vinneyto/school.git",
@@ -7,8 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "14.14.21",
-    "gl-matrix": "3.3.0",
-    "nvk": "0.8.0",
+    "ts-node": "9.1.1",
     "typescript": "4.1.3"
   }
 }
