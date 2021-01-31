@@ -12,6 +12,11 @@ gl-matrix@3.3.0:
   resolved "https://registry.yarnpkg.com/gl-matrix/-/gl-matrix-3.3.0.tgz#232eef60b1c8b30a28cbbe75b2caf6c48fd6358b"
   integrity sha512-COb7LDz+SXaHtl/h4LeaFcNdJdAQSDeVqjiIihSXNrkWObZLhDI4hIkZC11Aeqp7bcE72clzB0BnDXr2SmslRA==
 
+nvk-essentials@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/nvk-essentials/-/nvk-essentials-0.1.2.tgz#c4409bc6caf30a37a9bfd3359887c9717ee1dcd8"
+  integrity sha512-m4xbAx9/BlT0oT3wSufMdkvVqc9olpkAMlavQnQYgm07QauF6TuiM9+ynRX9/Px9W6mWiIhQ2k9fYQUk7rMSgQ==
+
 nvk@0.8.0:
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/nvk/-/nvk-0.8.0.tgz#aa37aaee547b4f6fe026100c37d2db5d73274379"

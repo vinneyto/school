@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as path from "path";
+
 import {
   VulkanWindow,
   VkApplicationInfo,
@@ -51,7 +54,19 @@ import {
   VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
   VkSwapchainKHR,
   vkCreateSwapchainKHR,
+  VkImage,
+  vkGetSwapchainImagesKHR,
+  VkImageView,
+  VkImageViewCreateInfo,
+  VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+  VK_IMAGE_VIEW_TYPE_2D,
+  VkFormat,
+  VK_COMPONENT_SWIZZLE_IDENTITY,
+  VK_IMAGE_ASPECT_COLOR_BIT,
+  vkCreateImageView,
 } from "nvk/generated/1.1.126/win32";
+// @ts-ignore
+import { GLSL } from "nvk-essentials";
 
 const VALIDATION_LAYERS = ["VK_LAYER_KHRONOS_validation"];
 
@@ -147,6 +162,10 @@ class Renderer {
   presentQueue!: VkQueue;
   surface!: VkSurfaceKHR;
   swapChain!: VkSwapchainKHR;
+  swapChainImages!: VkImage[];
+  swapChainImageFormat!: VkFormat;
+  swapChainExtent!: VkExtent2D;
+  swapChainImageViews!: VkImageView[];
 
   constructor() {
     this.win = new VulkanWindow({
@@ -163,6 +182,8 @@ class Renderer {
     this.initPhysicalDevice();
     this.initLogicalDevice();
     this.initSwapChain();
+    this.initImageViews();
+    this.initGraphicsPipeline();
   }
 
   initValidationLayers() {
@@ -338,7 +359,7 @@ class Renderer {
       indices.presentFamily!,
     ];
 
-    if (indices.graphicsFamily != indices.presentFamily) {
+    if (indices.graphicsFamily !== indices.presentFamily) {
       createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
       createInfo.queueFamilyIndexCount = 2;
       createInfo.pQueueFamilyIndices = new Uint32Array(queueFamilyIndices);
@@ -358,6 +379,63 @@ class Renderer {
     ASSERT_VK_RESULT(
       vkCreateSwapchainKHR(this.device, createInfo, null, this.swapChain)
     );
+
+    this.swapChainExtent = extent;
+    this.swapChainImageFormat = surfaceFormat.format;
+  }
+
+  initImageViews() {
+    const imageCount = { $: 0 };
+    vkGetSwapchainImagesKHR(this.device, this.swapChain, imageCount, null);
+
+    this.swapChainImages = makeArray(VkImage, imageCount.$);
+    vkGetSwapchainImagesKHR(
+      this.device,
+      this.swapChain,
+      imageCount,
+      this.swapChainImages
+    );
+
+    this.swapChainImageViews = [];
+
+    for (const image of this.swapChainImages) {
+      const createInfo = new VkImageViewCreateInfo();
+      createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+      createInfo.image = image;
+      createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+      createInfo.format = this.swapChainImageFormat;
+      createInfo.components!.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.components!.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.components!.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.components!.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.subresourceRange!.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      createInfo.subresourceRange!.baseMipLevel = 0;
+      createInfo.subresourceRange!.levelCount = 1;
+      createInfo.subresourceRange!.baseArrayLayer = 0;
+      createInfo.subresourceRange!.layerCount = 1;
+
+      const swapChainImageView = new VkImageView();
+      ASSERT_VK_RESULT(
+        vkCreateImageView(this.device, createInfo, null, swapChainImageView)
+      );
+
+      this.swapChainImageViews.push(swapChainImageView);
+    }
+  }
+
+  initGraphicsPipeline() {
+    const vertSrc = GLSL.toSPIRVSync({
+      source: fs.readFileSync(path.join(__dirname, "./shaders/triangle.vert")),
+      extension: `vert`,
+    }).output;
+
+    const fragSrc = GLSL.toSPIRVSync({
+      source: fs.readFileSync(path.join(__dirname, "./shaders/triangle.frag")),
+      extension: `frag`,
+    }).output;
+
+    console.log(vertSrc);
+    console.log(fragSrc);
   }
 }
 

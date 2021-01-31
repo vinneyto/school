@@ -9,8 +9,8 @@
     "noImplicitReturns": true,
     "preserveConstEnums": true,
     "strict": true,
-    "target": "ESNext",
-    "types": []
+    "target": "ESNext"
+
   },
   "include": ["src"]
 }
