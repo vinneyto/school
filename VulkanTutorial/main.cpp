@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
+#include <map>
+#include <string>
+#include <optional>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -20,6 +23,14 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif // DEBUG
 
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
+};
 
 class TriangleApplication
 {
@@ -103,29 +114,76 @@ private:
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
+        std::multimap<int, VkPhysicalDevice> candidates;
+
         trace("devices:");
 
         for (const auto& device : devices) {
-            if (isDeviceSuitable(device)) {
-                physicalDevice = device;
-            }
+            int score = rateDeviceSuitability(device);
+            candidates.insert(std::make_pair(score, device));
         }
 
-        if (physicalDevice == VK_NULL_HANDLE) {
+        if (candidates.rbegin()->first > 0) {
+            physicalDevice = candidates.rbegin()->second;
+        }
+        else {
             throw std::runtime_error("failed to find a suitable GPU!");
         }
     }
 
-    bool isDeviceSuitable(VkPhysicalDevice device) {
+    int rateDeviceSuitability(VkPhysicalDevice device) {
+        if (!isDeviceSuitable(device)) {
+            return 0;
+        }
+
         VkPhysicalDeviceProperties deviceProperties;
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-        traceItem(deviceProperties.deviceName);
+        int score = 0;
 
-        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-               deviceFeatures.geometryShader;
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            score += 1000;
+        }
+
+        score += deviceProperties.limits.maxImageDimension2D;
+
+        if (!deviceFeatures.geometryShader) {
+            return 0;
+        }
+
+        std::cout << "  " << deviceProperties.deviceName << ", score: " << score << std::endl;
+
+        return score;
+    }
+
+    bool isDeviceSuitable(VkPhysicalDevice device) {
+        QueueFamilyIndices indices = findQueueFamilies(device);
+
+        return indices.isComplete();
+    }
+
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+        QueueFamilyIndices indices;
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        int i = 0;
+
+        for (const auto& queueFamily : queueFamilies) {
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = i;
+            }
+
+            i++;
+        }
+
+        return indices;
     }
 
     void mainLoop() {
