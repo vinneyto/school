@@ -2,7 +2,7 @@ CC=g++
 INC_DIR = ../common
 CFLAGS=-c -std=c++17 -Wall -pedantic -I$(INC_DIR)
 LDFLAGS=
-SOURCES=*.cpp
+SOURCES=OneWeekend.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=renderer
 
