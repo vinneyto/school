@@ -146,8 +146,14 @@
     <ClCompile Include="OneWeekend.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\color.h" />
+    <ClInclude Include="..\common\ray.h" />
     <ClInclude Include="..\common\stb_image_write.h" />
     <ClInclude Include="..\common\vec3.h" />
+    <ClInclude Include="hittable.h" />
+    <ClInclude Include="hittable_list.h" />
+    <ClInclude Include="rtweekend.h" />
+    <ClInclude Include="sphere.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
