@@ -32,16 +32,16 @@
     <ClInclude Include="..\common\ray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="hittable.h">
+    <ClInclude Include="..\common\hittable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sphere.h">
+    <ClInclude Include="..\common\hittable_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="hittable_list.h">
+    <ClInclude Include="..\common\rtweekend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rtweekend.h">
+    <ClInclude Include="..\common\sphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
