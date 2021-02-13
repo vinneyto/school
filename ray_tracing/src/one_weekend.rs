@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use image::{ImageBuffer, Rgba};
 
 use ray_tracing::*;
@@ -25,6 +27,10 @@ fn main() {
     let lower_left_corner =
         origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
 
+    let now = Instant::now();
+
+    println!("begin rendering...");
+
     let img = ImageBuffer::from_fn(image_width, image_height, |x, y| {
         let u = x as f32 / (image_width - 1) as f32;
         let mut v = y as f32 / (image_height - 1) as f32;
@@ -41,6 +47,8 @@ fn main() {
             0u8,
         ])
     });
+
+    println!("rendered for {} ms", now.elapsed().as_millis());
 
     img.save("one_weekend.jpg").unwrap();
 }
