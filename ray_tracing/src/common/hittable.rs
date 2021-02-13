@@ -1,12 +1,15 @@
+use generational_arena::Index;
+
 use super::ray::*;
 use super::vec3::*;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Default)]
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f32,
     pub front_face: bool,
+    pub material_handle: Option<Index>,
 }
 
 impl HitRecord {

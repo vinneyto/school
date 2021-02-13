@@ -1,16 +1,26 @@
+use generational_arena::Index;
+
 use super::hittable::*;
 use super::ray::Ray;
 use super::vec3::*;
 
-#[derive(Debug, Clone, Default)]
 pub struct Sphere {
     pub center: Point3,
     pub radius: f32,
+    pub material_handle: Index,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32) -> Self {
-        Sphere { center, radius }
+    pub fn new(center: Point3, radius: f32, material_handle: Index) -> Self {
+        Sphere {
+            center,
+            radius,
+            material_handle,
+        }
+    }
+
+    pub fn new_box(center: Point3, radius: f32, material_handle: Index) -> Box<Self> {
+        Box::new(Self::new(center, radius, material_handle))
     }
 }
 
@@ -39,6 +49,7 @@ impl Hittable for Sphere {
         record.p = ray.at(record.t);
         let outward_normal = (record.p - self.center) / self.radius;
         record.set_face_normal(ray, outward_normal);
+        record.material_handle = Some(self.material_handle);
 
         true
     }

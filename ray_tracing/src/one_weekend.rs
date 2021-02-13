@@ -1,22 +1,62 @@
 use std::time::Instant;
 
-use image::{ImageBuffer, Rgba};
+use generational_arena::Arena;
+use image::{ImageBuffer, Rgb};
 use rand::prelude::*;
 
 use ray_tracing::*;
 
 fn main() {
     // Image
-    let aspect_ratio = 16.0 / 9.0;
+
+    // fast
+    #[cfg(not(feature = "precise"))]
     let image_width = 400;
+    #[cfg(not(feature = "precise"))]
+    let samples_per_pixel = 10;
+    #[cfg(not(feature = "precise"))]
+    let max_depth = 10;
+
+    // precise
+    #[cfg(feature = "precise")]
+    let image_width = 1920;
+    #[cfg(feature = "precise")]
+    let samples_per_pixel = 100;
+    #[cfg(feature = "precise")]
+    let max_depth = 100;
+
+    let aspect_ratio = 16.0 / 9.0;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
-    let samples_per_pixel = 50;
-    let max_depth = 50;
 
     // World
+    let mut materials: Arena<Box<dyn Material>> = Arena::new();
+
+    let material_ground_handle = materials.insert(Lambertian::new_box(Color::new(0.8, 0.8, 0.0)));
+    let material_center_handle = materials.insert(Lambertian::new_box(Color::new(0.7, 0.3, 0.3)));
+    let material_left_handle = materials.insert(Metal::new_box(Color::new(0.8, 0.8, 0.8)));
+    let material_right_handle = materials.insert(Metal::new_box(Color::new(0.8, 0.6, 0.2)));
+
     let mut world = HittableList::default();
-    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    world.add(Sphere::new_box(
+        Point3::new(0.0, 0.0, -1.0),
+        0.5,
+        material_ground_handle,
+    ));
+    world.add(Sphere::new_box(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_center_handle,
+    ));
+    world.add(Sphere::new_box(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left_handle,
+    ));
+    world.add(Sphere::new_box(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right_handle,
+    ));
 
     // Camera
 
@@ -28,6 +68,8 @@ fn main() {
 
     let mut rnd = rand::thread_rng();
 
+    let mut progress = 0.0;
+
     let img = ImageBuffer::from_fn(image_width, image_height, |x, y| {
         let mut pixel_color = Color::default();
 
@@ -36,28 +78,50 @@ fn main() {
             let vv = (y as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
             let v = 1.0 - vv;
             let ray = camera.get_ray(u, v);
-            pixel_color += ray_color(&ray, &world, max_depth);
+            pixel_color += ray_color(&ray, &world, &materials, max_depth);
+
+            if vv > (progress + 0.05) {
+                progress += 0.1;
+                println!("rendering... {}%", (progress * 100.0) as u8);
+            }
         }
 
-        Rgba(to_rgba(&pixel_color, samples_per_pixel))
+        Rgb(to_rgb(&pixel_color, samples_per_pixel))
     });
 
     println!("rendered for {} ms", now.elapsed().as_millis());
 
-    img.save("one_weekend.bmp").unwrap();
+    #[cfg(not(feature = "precise"))]
+    let path = "one_weekend.bmp";
+
+    #[cfg(feature = "precise")]
+    let path = "one_weekend_precise.bmp";
+
+    img.save(path).unwrap();
 }
 
-fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Color {
+fn ray_color(
+    ray: &Ray,
+    world: &HittableList,
+    materials: &Arena<Box<dyn Material>>,
+    depth: i32,
+) -> Color {
     let mut rec = HitRecord::default();
 
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
-    if world.hit(ray, 0.001, f32::MAX, &mut rec) {
-        let target = rec.p + rec.normal + Point3::random_in_unit_sphere().unit_vector();
-        let next_ray = Ray::new(rec.p, target - rec.p);
-        return 0.5 * ray_color(&next_ray, world, depth - 1);
+    if world.hit(ray, 0.001, f32::MAX, &mut rec) && rec.material_handle.is_some() {
+        let material = materials.get(rec.material_handle.unwrap()).unwrap();
+        let mut scattered = Ray::default();
+        let mut attenuation = Color::default();
+
+        if material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
+            return attenuation * ray_color(&scattered, world, materials, depth - 1);
+        }
+
+        return Color::new(0.0, 0.0, 0.0);
     }
 
     let unit_direction = ray.dir.unit_vector();

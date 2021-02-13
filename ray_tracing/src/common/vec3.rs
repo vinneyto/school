@@ -41,6 +41,15 @@ impl Vec3 {
             }
         }
     }
+
+    pub fn near_zero(self) -> bool {
+        let s = 1e-8;
+        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+    }
+
+    pub fn reflect(self, n: Vec3) -> Vec3 {
+        self - 2.0 * self.dot(n) * n
+    }
 }
 
 impl ops::Neg for Vec3 {
