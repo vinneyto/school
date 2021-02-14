@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use super::hittable::*;
 use super::ray::*;
 use super::vec3::*;
 
-pub trait Material {
+pub trait Material: Sync + Send {
     fn scatter(
         &self,
         ray_in: &Ray,
@@ -22,8 +24,8 @@ impl Lambertian {
         Self { albedo }
     }
 
-    pub fn new_box(albedo: Color) -> Box<Self> {
-        Box::new(Self::new(albedo))
+    pub fn new_arc(albedo: Color) -> Arc<Self> {
+        Arc::new(Self::new(albedo))
     }
 }
 
@@ -57,8 +59,8 @@ impl Metal {
         Self { albedo }
     }
 
-    pub fn new_box(albedo: Color) -> Box<Self> {
-        Box::new(Self::new(albedo))
+    pub fn new_arc(albedo: Color) -> Arc<Self> {
+        Arc::new(Self::new(albedo))
     }
 }
 

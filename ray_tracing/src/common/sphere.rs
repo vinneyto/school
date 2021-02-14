@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use generational_arena::Index;
 
 use super::hittable::*;
@@ -19,8 +21,8 @@ impl Sphere {
         }
     }
 
-    pub fn new_box(center: Point3, radius: f32, material_handle: Index) -> Box<Self> {
-        Box::new(Self::new(center, radius, material_handle))
+    pub fn new_arc(center: Point3, radius: f32, material_handle: Index) -> Arc<Self> {
+        Arc::new(Self::new(center, radius, material_handle))
     }
 }
 

@@ -23,6 +23,6 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Sync + Send {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
 }

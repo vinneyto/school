@@ -1,8 +1,10 @@
+use std::sync::Arc;
 use std::time::Instant;
 
 use generational_arena::Arena;
 use image::{ImageBuffer, Rgb};
 use rand::prelude::*;
+use rayon::prelude::*;
 
 use ray_tracing::*;
 
@@ -29,30 +31,30 @@ fn main() {
     let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     // World
-    let mut materials: Arena<Box<dyn Material>> = Arena::new();
+    let mut materials: Arena<Arc<dyn Material>> = Arena::new();
 
-    let material_ground_handle = materials.insert(Lambertian::new_box(Color::new(0.8, 0.8, 0.0)));
-    let material_center_handle = materials.insert(Lambertian::new_box(Color::new(0.7, 0.3, 0.3)));
-    let material_left_handle = materials.insert(Metal::new_box(Color::new(0.8, 0.8, 0.8)));
-    let material_right_handle = materials.insert(Metal::new_box(Color::new(0.8, 0.6, 0.2)));
+    let material_ground_handle = materials.insert(Lambertian::new_arc(Color::new(0.8, 0.8, 0.0)));
+    let material_center_handle = materials.insert(Lambertian::new_arc(Color::new(0.7, 0.3, 0.3)));
+    let material_left_handle = materials.insert(Metal::new_arc(Color::new(0.8, 0.8, 0.8)));
+    let material_right_handle = materials.insert(Metal::new_arc(Color::new(0.8, 0.6, 0.2)));
 
     let mut world = HittableList::default();
-    world.add(Sphere::new_box(
+    world.add(Sphere::new_arc(
         Point3::new(0.0, 0.0, -1.0),
         0.5,
         material_ground_handle,
     ));
-    world.add(Sphere::new_box(
+    world.add(Sphere::new_arc(
         Point3::new(0.0, -100.5, -1.0),
         100.0,
         material_center_handle,
     ));
-    world.add(Sphere::new_box(
+    world.add(Sphere::new_arc(
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
         material_left_handle,
     ));
-    world.add(Sphere::new_box(
+    world.add(Sphere::new_arc(
         Point3::new(1.0, 0.0, -1.0),
         0.5,
         material_right_handle,
@@ -66,28 +68,41 @@ fn main() {
 
     println!("begin rendering...");
 
-    let mut rnd = rand::thread_rng();
+    let mut coords: Vec<(u32, u32)> = vec![];
 
-    let mut progress = 0.0;
-
-    let img = ImageBuffer::from_fn(image_width, image_height, |x, y| {
-        let mut pixel_color = Color::default();
-
-        for _ in 0..samples_per_pixel {
-            let u = (x as f32 + rnd.gen::<f32>()) / (image_width - 1) as f32;
-            let vv = (y as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
-            let v = 1.0 - vv;
-            let ray = camera.get_ray(u, v);
-            pixel_color += ray_color(&ray, &world, &materials, max_depth);
-
-            if vv > (progress + 0.05) {
-                progress += 0.1;
-                println!("rendering... {}%", (progress * 100.0) as u8);
-            }
+    for y in 0..image_height {
+        for x in 0..image_width {
+            coords.push((x, y));
         }
+    }
 
-        Rgb(to_rgb(&pixel_color, samples_per_pixel))
-    });
+    let pixels: Vec<[u8; 3]> = coords
+        .par_iter()
+        .map(|&v| {
+            let mut rnd = rand::thread_rng();
+            let mut pixel_color = Color::default();
+
+            for _ in 0..samples_per_pixel {
+                let u = (v.0 as f32 + rnd.gen::<f32>()) / (image_width - 1) as f32;
+                let vv = (v.1 as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
+                let v = 1.0 - vv;
+                let ray = camera.get_ray(u, v);
+                pixel_color += ray_color(&ray, &world, &materials, max_depth);
+            }
+
+            to_rgb(&pixel_color, samples_per_pixel)
+        })
+        .collect();
+
+    // let mut data: Vec<u8> = vec![];
+
+    // for px in &pixels {
+    //     data.push(px[0]);
+    //     data.push(px[1]);
+    //     data.push(px[2]);
+    // }
+
+    // let img = ImageBuffer::from_raw(image_width, image_height, data).unwrap();
 
     println!("rendered for {} ms", now.elapsed().as_millis());
 
@@ -97,13 +112,13 @@ fn main() {
     #[cfg(feature = "precise")]
     let path = "one_weekend_precise.bmp";
 
-    img.save(path).unwrap();
+    // img.save(path).unwrap();
 }
 
 fn ray_color(
     ray: &Ray,
     world: &HittableList,
-    materials: &Arena<Box<dyn Material>>,
+    materials: &Arena<Arc<dyn Material>>,
     depth: i32,
 ) -> Color {
     let mut rec = HitRecord::default();

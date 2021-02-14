@@ -1,13 +1,15 @@
+use std::sync::Arc;
+
 use super::hittable::*;
 use super::ray::*;
 
 #[derive(Default)]
 pub struct HittableList {
-    pub objects: Vec<Box<dyn Hittable>>,
+    pub objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
+    pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object);
     }
 

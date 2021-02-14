@@ -12,6 +12,7 @@ precise = []
 [dependencies]
 image = "0.23.13"
 rand = "0.8.3"
+rayon = "1.5.0"
 generational-arena = "0.2"
 
 [[bin]]
