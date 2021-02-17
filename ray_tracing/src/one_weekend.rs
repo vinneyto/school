@@ -68,23 +68,17 @@ fn main() {
 
     println!("begin rendering...");
 
-    let mut coords: Vec<(u32, u32)> = vec![];
-
-    for y in 0..image_height {
-        for x in 0..image_width {
-            coords.push((x, y));
-        }
-    }
-
-    let pixels: Vec<[u8; 3]> = coords
-        .par_iter()
-        .map(|&v| {
+    let pixels = (0..image_height * image_width)
+        .into_par_iter()
+        .map(|i| {
+            let x = i % image_width;
+            let y = (i - x) / image_width;
             let mut rnd = rand::thread_rng();
             let mut pixel_color = Color::default();
 
             for _ in 0..samples_per_pixel {
-                let u = (v.0 as f32 + rnd.gen::<f32>()) / (image_width - 1) as f32;
-                let vv = (v.1 as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
+                let u = (x as f32 + rnd.gen::<f32>()) / (image_width - 1) as f32;
+                let vv = (y as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
                 let v = 1.0 - vv;
                 let ray = camera.get_ray(u, v);
                 pixel_color += ray_color(&ray, &world, &materials, max_depth);
@@ -92,17 +86,11 @@ fn main() {
 
             to_rgb(&pixel_color, samples_per_pixel)
         })
-        .collect();
+        .flatten()
+        .collect::<Vec<u8>>();
 
-    // let mut data: Vec<u8> = vec![];
-
-    // for px in &pixels {
-    //     data.push(px[0]);
-    //     data.push(px[1]);
-    //     data.push(px[2]);
-    // }
-
-    // let img = ImageBuffer::from_raw(image_width, image_height, data).unwrap();
+    let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
+        ImageBuffer::from_vec(image_width, image_height, pixels).unwrap();
 
     println!("rendered for {} ms", now.elapsed().as_millis());
 
@@ -112,7 +100,7 @@ fn main() {
     #[cfg(feature = "precise")]
     let path = "one_weekend_precise.bmp";
 
-    // img.save(path).unwrap();
+    img.save(path).unwrap();
 }
 
 fn ray_color(
