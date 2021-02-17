@@ -23,9 +23,9 @@ fn main() {
     #[cfg(feature = "precise")]
     let image_width = 1920;
     #[cfg(feature = "precise")]
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 700;
     #[cfg(feature = "precise")]
-    let max_depth = 100;
+    let max_depth = 200;
 
     let aspect_ratio = 16.0 / 9.0;
     let image_height = (image_width as f32 / aspect_ratio) as u32;

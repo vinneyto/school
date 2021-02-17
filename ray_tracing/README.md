@@ -1,4 +1,4 @@
 # How to run
 
-    cargo run --bin one_weekend
-    cargo run --bin one_weekend --features="precise"
+    cargo run --bin one_weekend --release
+    cargo run --bin one_weekend --features="precise" --release
