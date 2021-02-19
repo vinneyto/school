@@ -12,16 +12,12 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32, material_handle: MaterialHandle) -> Self {
-        Sphere {
+    pub fn new(center: Point3, radius: f32, material_handle: MaterialHandle) -> Arc<Self> {
+        Arc::new(Sphere {
             center,
             radius,
             material_handle,
-        }
-    }
-
-    pub fn new_arc(center: Point3, radius: f32, material_handle: MaterialHandle) -> Arc<Self> {
-        Arc::new(Self::new(center, radius, material_handle))
+        })
     }
 }
 

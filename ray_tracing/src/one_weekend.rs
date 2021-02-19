@@ -21,7 +21,7 @@ fn main() {
     #[cfg(feature = "precise")]
     let image_width = 1920;
     #[cfg(feature = "precise")]
-    let samples_per_pixel = 700;
+    let samples_per_pixel = 1000;
     #[cfg(feature = "precise")]
     let max_depth = 200;
 
@@ -31,28 +31,28 @@ fn main() {
     // World
     let mut materials = MaterialArena::new();
 
-    let material_ground_handle = materials.insert(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let material_ground_handle = materials.insert(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
     let material_center_handle = materials.insert(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
     let material_left_handle = materials.insert(Dielectric::new(1.5));
-    let material_right_handle = materials.insert(Metal::new(Color::new(0.8, 0.6, 0.2), 0.2));
+    let material_right_handle = materials.insert(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0));
 
     let mut world = HittableList::default();
-    world.add(Sphere::new_arc(
+    world.add(Sphere::new(
         Point3::new(0.0, 0.0, -1.0),
         0.5,
         material_center_handle,
     ));
-    world.add(Sphere::new_arc(
+    world.add(Sphere::new(
         Point3::new(0.0, -100.5, -1.0),
         100.0,
         material_ground_handle,
     ));
-    world.add(Sphere::new_arc(
+    world.add(Sphere::new(
         Point3::new(-1.0, 0.0, -1.0),
         0.5,
         material_left_handle,
     ));
-    world.add(Sphere::new_arc(
+    world.add(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),
         0.5,
         material_right_handle,
@@ -60,7 +60,13 @@ fn main() {
 
     // Camera
 
-    let camera = Camera::default();
+    let camera = Camera::new(
+        Point3::new(-2.0, 1.5, 1.5),
+        Point3::new(0.0, 0.0, -1.0),
+        Point3::new(0.0, 0.1, 0.0),
+        40.0,
+        aspect_ratio,
+    );
 
     let now = Instant::now();
 
