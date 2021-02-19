@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use generational_arena::Index;
-
+use super::arena::*;
 use super::hittable::*;
 use super::ray::Ray;
 use super::vec3::*;
@@ -9,11 +8,11 @@ use super::vec3::*;
 pub struct Sphere {
     pub center: Point3,
     pub radius: f32,
-    pub material_handle: Index,
+    pub material_handle: MaterialHandle,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32, material_handle: Index) -> Self {
+    pub fn new(center: Point3, radius: f32, material_handle: MaterialHandle) -> Self {
         Sphere {
             center,
             radius,
@@ -21,7 +20,7 @@ impl Sphere {
         }
     }
 
-    pub fn new_arc(center: Point3, radius: f32, material_handle: Index) -> Arc<Self> {
+    pub fn new_arc(center: Point3, radius: f32, material_handle: MaterialHandle) -> Arc<Self> {
         Arc::new(Self::new(center, radius, material_handle))
     }
 }

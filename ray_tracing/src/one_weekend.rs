@@ -1,7 +1,5 @@
-use std::sync::Arc;
 use std::time::Instant;
 
-use generational_arena::Arena;
 use image::{ImageBuffer, Rgb};
 use rand::prelude::*;
 use rayon::prelude::*;
@@ -31,7 +29,7 @@ fn main() {
     let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     // World
-    let mut materials: Arena<Arc<dyn Material>> = Arena::new();
+    let mut materials = MaterialArena::new();
 
     let material_ground_handle = materials.insert(Lambertian::new_arc(Color::new(0.8, 0.8, 0.0)));
     let material_center_handle = materials.insert(Lambertian::new_arc(Color::new(0.7, 0.3, 0.3)));
@@ -103,12 +101,7 @@ fn main() {
     img.save(path).unwrap();
 }
 
-fn ray_color(
-    ray: &Ray,
-    world: &HittableList,
-    materials: &Arena<Arc<dyn Material>>,
-    depth: i32,
-) -> Color {
+fn ray_color(ray: &Ray, world: &HittableList, materials: &MaterialArena, depth: i32) -> Color {
     let mut rec = HitRecord::default();
 
     if depth <= 0 {

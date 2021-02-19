@@ -1,5 +1,4 @@
-use generational_arena::Index;
-
+use super::arena::*;
 use super::ray::*;
 use super::vec3::*;
 
@@ -9,7 +8,7 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub t: f32,
     pub front_face: bool,
-    pub material_handle: Option<Index>,
+    pub material_handle: Option<MaterialHandle>,
 }
 
 impl HitRecord {
