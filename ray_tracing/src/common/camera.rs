@@ -1,3 +1,4 @@
+use super::helpers::*;
 use super::ray::*;
 use super::vec3::*;
 
@@ -8,10 +9,21 @@ pub struct Camera {
     lower_left_corner: Point3,
     horizontal: Vec3,
     vertical: Vec3,
+    lens_radius: f32,
+    u: Vec3,
+    v: Vec3,
 }
 
 impl Camera {
-    pub fn new(look_from: Point3, look_at: Point3, v_up: Vec3, vfov: f32, aspect: f32) -> Self {
+    pub fn new(
+        look_from: Point3,
+        look_at: Point3,
+        v_up: Vec3,
+        vfov: f32,
+        aspect: f32,
+        aperture: f32,
+        focus_dist: f32,
+    ) -> Self {
         let theta = DEG_TO_RAD * vfov;
         let h = (theta / 2.0).tan();
         let viewport_height = 2.0 * h;
@@ -22,24 +34,31 @@ impl Camera {
         let v = w.cross(u);
 
         let origin = look_from;
-        let horizontal = viewport_width * u;
-        let vertical = viewport_height * v;
-        let lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - w;
+        let horizontal = focus_dist * viewport_width * u;
+        let vertical = focus_dist * viewport_height * v;
+        let lower_left_corner = -horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
+        let lens_radius = aperture / 2.0;
 
         Self {
             origin,
             lower_left_corner,
             horizontal,
             vertical,
+            u,
+            v,
+            lens_radius,
         }
     }
 }
 
 impl Camera {
-    pub fn get_ray(&self, u: f32, v: f32) -> Ray {
+    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
+        let rd = self.lens_radius * random_in_unit_disc();
+        let offset = self.u * rd.x + self.v * rd.y;
+
         Ray::new(
-            self.origin,
-            self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin,
+            self.origin + offset,
+            self.lower_left_corner + s * self.horizontal + t * self.vertical - offset,
         )
     }
 }

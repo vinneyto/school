@@ -36,7 +36,7 @@ impl Material for Lambertian {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
-        let mut scatter_direction = rec.normal + Point3::random_in_unit_sphere().unit_vector();
+        let mut scatter_direction = rec.normal + random_in_unit_sphere().unit_vector();
 
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal;
@@ -71,7 +71,7 @@ impl Material for Metal {
         let reflected = ray_in.dir.unit_vector().reflect(rec.normal);
         *scattered = Ray::new(
             rec.p,
-            reflected + self.fuzz * Point3::random_in_unit_sphere().unit_vector(),
+            reflected + self.fuzz * random_in_unit_sphere().unit_vector(),
         );
         *attenuation = self.albedo;
 
