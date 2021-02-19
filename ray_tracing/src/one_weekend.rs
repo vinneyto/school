@@ -11,11 +11,11 @@ fn main() {
 
     // fast
     #[cfg(not(feature = "precise"))]
-    let image_width = 400;
+    let image_width = 800;
     #[cfg(not(feature = "precise"))]
-    let samples_per_pixel = 10;
+    let samples_per_pixel = 30;
     #[cfg(not(feature = "precise"))]
-    let max_depth = 10;
+    let max_depth = 30;
 
     // precise
     #[cfg(feature = "precise")]
@@ -31,21 +31,21 @@ fn main() {
     // World
     let mut materials = MaterialArena::new();
 
-    let material_ground_handle = materials.insert(Lambertian::new_arc(Color::new(0.8, 0.8, 0.0)));
-    let material_center_handle = materials.insert(Lambertian::new_arc(Color::new(0.7, 0.3, 0.3)));
-    let material_left_handle = materials.insert(Metal::new_arc(Color::new(0.8, 0.8, 0.8)));
-    let material_right_handle = materials.insert(Metal::new_arc(Color::new(0.8, 0.6, 0.2)));
+    let material_ground_handle = materials.insert(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let material_center_handle = materials.insert(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
+    let material_left_handle = materials.insert(Dielectric::new(1.5));
+    let material_right_handle = materials.insert(Metal::new(Color::new(0.8, 0.6, 0.2), 0.2));
 
     let mut world = HittableList::default();
     world.add(Sphere::new_arc(
         Point3::new(0.0, 0.0, -1.0),
         0.5,
-        material_ground_handle,
+        material_center_handle,
     ));
     world.add(Sphere::new_arc(
         Point3::new(0.0, -100.5, -1.0),
         100.0,
-        material_center_handle,
+        material_ground_handle,
     ));
     world.add(Sphere::new_arc(
         Point3::new(-1.0, 0.0, -1.0),

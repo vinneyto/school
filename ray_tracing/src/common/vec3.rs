@@ -2,6 +2,8 @@ use std::ops;
 
 use rand::prelude::*;
 
+use super::helpers::clamp;
+
 #[derive(Debug, Copy, Clone, Default)]
 pub struct Vec3 {
     pub x: f32,
@@ -49,6 +51,13 @@ impl Vec3 {
 
     pub fn reflect(self, n: Vec3) -> Vec3 {
         self - 2.0 * self.dot(n) * n
+    }
+
+    pub fn refract(self, n: Vec3, etai_over_etat: f32) -> Vec3 {
+        let cos_theta = clamp((-self).dot(n), -1.0, 1.0);
+        let r_out_perp = etai_over_etat * (self + cos_theta * n);
+        let r_out_parallel = -(1.0 - r_out_perp.length_squared()).abs().sqrt() * n;
+        return r_out_perp + r_out_parallel;
     }
 }
 
