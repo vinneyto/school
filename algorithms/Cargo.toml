@@ -1,0 +1,17 @@
+[package]
+name = "algorithms"
+version = "0.1.0"
+authors = ["vinneyto <vinneyto@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[[bin]]
+name = "np_states"
+path = "src/np_states.rs"
+
+[[bin]]
+name = "dijkstra"
+path = "src/dijkstra.rs"

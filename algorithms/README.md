@@ -1,5 +1,3 @@
-# algorithms
+# How to run
 
-    yarn install
-
-    yarn ts-node src/spfd.ts
+    cargo run --bin np_states
