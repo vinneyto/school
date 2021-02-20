@@ -1,5 +1,7 @@
 use std::ops;
 
+use rand::prelude::*;
+
 use super::helpers::clamp;
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -15,6 +17,19 @@ pub type Color = Vec3;
 impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Vec3 { x, y, z }
+    }
+
+    pub fn random() -> Self {
+        let mut rnd = rand::thread_rng();
+        Self::new(rnd.gen(), rnd.gen(), rnd.gen())
+    }
+    pub fn random_range(from: f32, to: f32) -> Self {
+        let mut rnd = rand::thread_rng();
+        Self::new(
+            rnd.gen_range(from..to),
+            rnd.gen_range(from..to),
+            rnd.gen_range(from..to),
+        )
     }
 
     pub fn near_zero(self) -> bool {

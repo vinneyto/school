@@ -29,25 +29,21 @@ pub fn to_rgb(color: &Color, samples_per_pixel: u32) -> Vec<u8> {
     ]
 }
 
-pub fn random() -> Vec3 {
+pub fn random_f32() -> f32 {
     let mut rnd = rand::thread_rng();
 
-    Vec3::new(rnd.gen(), rnd.gen(), rnd.gen())
+    rnd.gen()
 }
 
-pub fn random_range(from: f32, to: f32) -> Vec3 {
+pub fn random_f32_range(from: f32, to: f32) -> f32 {
     let mut rnd = rand::thread_rng();
 
-    Vec3::new(
-        rnd.gen_range(from..to),
-        rnd.gen_range(from..to),
-        rnd.gen_range(from..to),
-    )
+    rnd.gen_range(from..to)
 }
 
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
-        let p = random_range(-1.0, 1.0);
+        let p = Vec3::random_range(-1.0, 1.0);
         if p.length_squared() < 1.0 {
             return p;
         }

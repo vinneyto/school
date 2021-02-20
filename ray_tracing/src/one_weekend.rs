@@ -23,54 +23,27 @@ fn main() {
     #[cfg(feature = "precise")]
     let samples_per_pixel = 1000;
     #[cfg(feature = "precise")]
-    let max_depth = 200;
+    let max_depth = 50;
 
     let aspect_ratio = 16.0 / 9.0;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     // World
-    let mut materials = MaterialArena::new();
-
-    let material_ground_handle = materials.insert(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let material_center_handle = materials.insert(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    let material_left_handle = materials.insert(Dielectric::new(1.5));
-    let material_right_handle = materials.insert(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0));
-
-    let mut world = HittableList::default();
-    world.add(Sphere::new(
-        Point3::new(0.0, 0.0, -1.0),
-        0.5,
-        material_center_handle,
-    ));
-    world.add(Sphere::new(
-        Point3::new(0.0, -100.5, -1.0),
-        100.0,
-        material_ground_handle,
-    ));
-    world.add(Sphere::new(
-        Point3::new(-1.0, 0.0, -1.0),
-        0.5,
-        material_left_handle,
-    ));
-    world.add(Sphere::new(
-        Point3::new(1.0, 0.0, -1.0),
-        0.5,
-        material_right_handle,
-    ));
+    let (world, materials) = random_scene();
 
     // Camera
 
-    let look_from = Point3::new(-2.0, 1.5, 1.0);
+    let look_from = Point3::new(13.0, 2.0, 3.0);
     let look_at = Point3::new(0.0, 0.0, -1.0);
     let v_up = Point3::new(0.0, 0.1, 0.0);
-    let dist_to_focus = (look_from - look_at).length();
-    let aperture = 0.3;
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
 
     let camera = Camera::new(
         look_from,
         look_at,
         v_up,
-        40.0,
+        20.0,
         aspect_ratio,
         aperture,
         dist_to_focus,
@@ -137,4 +110,56 @@ fn ray_color(ray: &Ray, world: &HittableList, materials: &MaterialArena, depth: 
     let unit_direction = ray.dir.unit_vector();
     let t = 0.5 * (unit_direction.y + 1.0);
     return (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0);
+}
+
+fn random_scene() -> (HittableList, MaterialArena) {
+    let mut world = HittableList::default();
+    let mut materials = MaterialArena::new();
+
+    let ground_material_handle = materials.insert(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.add(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        ground_material_handle,
+    ));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = random_f32();
+
+            let center = Point3::new(
+                a as f32 + 0.9 * random_f32(),
+                0.2,
+                b as f32 + 0.9 * random_f32(),
+            );
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let material_handle = if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo = Color::random() * Color::random();
+                    materials.insert(Lambertian::new(albedo))
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let albedo = Color::random_range(0.5, 1.0);
+                    let fuzz = random_f32_range(0.0, 0.5);
+                    materials.insert(Metal::new(albedo, fuzz))
+                } else {
+                    // glass
+                    materials.insert(Dielectric::new(1.5))
+                };
+                world.add(Sphere::new(center, 0.2, material_handle));
+            }
+        }
+    }
+
+    let m1 = materials.insert(Dielectric::new(1.5));
+    world.add(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, m1));
+
+    let m2 = materials.insert(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.add(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, m2));
+
+    let m3 = materials.insert(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    world.add(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, m3));
+
+    (world, materials)
 }
