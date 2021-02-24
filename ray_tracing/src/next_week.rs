@@ -23,13 +23,16 @@ fn main() {
     #[cfg(feature = "precise")]
     let samples_per_pixel = 1000;
     #[cfg(feature = "precise")]
-    let max_depth = 50;
+    let max_depth = 100;
 
     let aspect_ratio = 16.0 / 9.0;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     // World
-    let (world, materials) = random_scene();
+    let mut hittables = HittableArena::new();
+    let mut materials = MaterialArena::new();
+
+    let world = random_scene(&mut hittables, &mut materials);
 
     // Camera
 
@@ -66,7 +69,7 @@ fn main() {
                 let vv = (y as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
                 let v = 1.0 - vv;
                 let ray = camera.get_ray(u, v);
-                pixel_color += ray_color(&ray, &world, &materials, max_depth);
+                pixel_color += ray_color(&ray, &hittables, &materials, &world, max_depth);
             }
 
             to_rgb(&pixel_color, samples_per_pixel)
@@ -91,20 +94,26 @@ fn main() {
     img.save(path).unwrap();
 }
 
-fn ray_color(ray: &Ray, world: &HittableList, materials: &MaterialArena, depth: i32) -> Color {
+fn ray_color<T: Hittable>(
+    ray: &Ray,
+    hittables: &HittableArena,
+    materials: &MaterialArena,
+    world: &T,
+    depth: i32,
+) -> Color {
     let mut rec = HitRecord::default();
 
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
 
-    if world.hit(ray, 0.001, f32::MAX, &mut rec) && rec.material_handle.is_some() {
+    if world.hit(hittables, ray, 0.001, f32::MAX, &mut rec) && rec.material_handle.is_some() {
         let material = materials.get(rec.material_handle.unwrap()).unwrap();
         let mut scattered = Ray::default();
         let mut attenuation = Color::default();
 
         if material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * ray_color(&scattered, world, materials, depth - 1);
+            return attenuation * ray_color(&scattered, hittables, materials, world, depth - 1);
         }
 
         return Color::new(0.0, 0.0, 0.0);
@@ -115,12 +124,9 @@ fn ray_color(ray: &Ray, world: &HittableList, materials: &MaterialArena, depth: 
     return (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0);
 }
 
-fn random_scene() -> (HittableList, MaterialArena) {
-    let mut world = HittableList::default();
-    let mut materials = MaterialArena::new();
-
+fn random_scene(hittables: &mut HittableArena, materials: &mut MaterialArena) -> BVHNode {
     let ground_material_handle = materials.insert(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.add(Sphere::new(
+    hittables.insert(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
         ground_material_handle,
@@ -150,19 +156,24 @@ fn random_scene() -> (HittableList, MaterialArena) {
                     // glass
                     materials.insert(Dielectric::new(1.5))
                 };
-                world.add(Sphere::new(center, 0.2, material_handle));
+                hittables.insert(Sphere::new(center, 0.2, material_handle));
             }
         }
     }
 
     let m1 = materials.insert(Dielectric::new(1.5));
-    world.add(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, m1));
+    hittables.insert(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, m1));
 
     let m2 = materials.insert(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.add(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, m2));
+    hittables.insert(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, m2));
 
     let m3 = materials.insert(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, m3));
+    hittables.insert(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, m3));
 
-    (world, materials)
+    let src_objects = hittables
+        .iter()
+        .map(|(handle, _)| HittableHandle { handle })
+        .collect::<Vec<HittableHandle>>();
+
+    BVHNode::new(hittables, &src_objects, 0.0, f32::MAX)
 }

@@ -23,7 +23,14 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+    fn hit(
+        &self,
+        _arena: &HittableArena,
+        ray: &Ray,
+        t_min: f32,
+        t_max: f32,
+        record: &mut HitRecord,
+    ) -> bool {
         let oc = ray.orig - self.center;
         let a = ray.dir.length_squared();
         let half_b = oc.dot(ray.dir);
@@ -52,7 +59,13 @@ impl Hittable for Sphere {
         true
     }
 
-    fn bounding_box(&self, _time0: f32, _time1: f32, output_box: &mut AABB) -> bool {
+    fn bounding_box(
+        &self,
+        _arena: &HittableArena,
+        _time0: f32,
+        _time1: f32,
+        output_box: &mut AABB,
+    ) -> bool {
         *output_box = AABB::new(
             self.center - Vec3::new(self.radius, self.radius, self.radius),
             self.center + Vec3::new(self.radius, self.radius, self.radius),

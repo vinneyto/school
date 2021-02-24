@@ -1,31 +1,42 @@
-use std::sync::Arc;
-
 use super::aabb::*;
+use super::arena::*;
 use super::hittable::*;
 use super::ray::*;
 
 #[derive(Default)]
 pub struct HittableList {
-    pub objects: Vec<Arc<dyn Hittable>>,
+    pub handles: Vec<HittableHandle>,
 }
 
 impl HittableList {
-    pub fn add(&mut self, object: Arc<dyn Hittable>) {
-        self.objects.push(object);
-    }
+    pub fn new(arena: &HittableArena) -> Self {
+        let handles = arena
+            .iter()
+            .map(|(handle, _)| HittableHandle { handle })
+            .collect();
 
-    pub fn clear(&mut self) {
-        self.objects.clear();
+        Self { handles }
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+    fn hit(
+        &self,
+        arena: &HittableArena,
+        ray: &Ray,
+        t_min: f32,
+        t_max: f32,
+        record: &mut HitRecord,
+    ) -> bool {
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
-        for object in &self.objects {
-            if object.hit(ray, t_min, closest_so_far, record) {
+        for handle in &self.handles {
+            if arena
+                .get(*handle)
+                .unwrap()
+                .hit(arena, ray, t_min, closest_so_far, record)
+            {
                 hit_anything = true;
                 closest_so_far = record.t;
             }
@@ -34,12 +45,22 @@ impl Hittable for HittableList {
         return hit_anything;
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool {
+    fn bounding_box(
+        &self,
+        arena: &HittableArena,
+        time0: f32,
+        time1: f32,
+        output_box: &mut AABB,
+    ) -> bool {
         let mut temp_box = AABB::default();
         let mut first_box = true;
 
-        for object in &self.objects {
-            if !object.bounding_box(time0, time1, &mut temp_box) {
+        for handle in &self.handles {
+            if !arena
+                .get(*handle)
+                .unwrap()
+                .bounding_box(arena, time0, time1, &mut temp_box)
+            {
                 return false;
             }
             *output_box = if first_box {
