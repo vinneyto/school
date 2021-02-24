@@ -19,3 +19,7 @@ partial-min-max = "0.4.0"
 [[bin]]
 name = "one_weekend"
 path = "src/one_weekend.rs"
+
+[[bin]]
+name = "next_week"
+path = "src/next_week.rs"

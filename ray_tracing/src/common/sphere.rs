@@ -1,4 +1,3 @@
-use std::cmp;
 use std::sync::Arc;
 
 use super::aabb::*;
@@ -53,7 +52,7 @@ impl Hittable for Sphere {
         true
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool {
+    fn bounding_box(&self, _time0: f32, _time1: f32, output_box: &mut AABB) -> bool {
         *output_box = AABB::new(
             self.center - Vec3::new(self.radius, self.radius, self.radius),
             self.center + Vec3::new(self.radius, self.radius, self.radius),
