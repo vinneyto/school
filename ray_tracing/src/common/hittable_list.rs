@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::aabb::*;
 use super::hittable::*;
 use super::ray::*;
 
@@ -31,5 +32,24 @@ impl Hittable for HittableList {
         }
 
         return hit_anything;
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool {
+        let mut temp_box = AABB::default();
+        let mut first_box = true;
+
+        for object in &self.objects {
+            if !object.bounding_box(time0, time1, &mut temp_box) {
+                return false;
+            }
+            *output_box = if first_box {
+                temp_box
+            } else {
+                *output_box & temp_box
+            };
+            first_box = false;
+        }
+
+        true
     }
 }

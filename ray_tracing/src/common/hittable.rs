@@ -1,3 +1,4 @@
+use super::aabb::*;
 use super::arena::*;
 use super::ray::*;
 use super::vec3::*;
@@ -24,4 +25,5 @@ impl HitRecord {
 
 pub trait Hittable: Sync + Send {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
+    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool;
 }

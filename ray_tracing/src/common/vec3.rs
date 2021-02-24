@@ -1,5 +1,6 @@
 use std::ops;
 
+use partial_min_max::{max, min};
 use rand::prelude::*;
 
 use super::helpers::clamp;
@@ -46,6 +47,22 @@ impl Vec3 {
         let r_out_perp = etai_over_etat * (self + cos_theta * n);
         let r_out_parallel = -(1.0 - r_out_perp.length_squared()).abs().sqrt() * n;
         return r_out_perp + r_out_parallel;
+    }
+
+    pub fn min(self, other: Vec3) -> Vec3 {
+        Self::new(
+            min(self.x, other.x),
+            min(self.y, other.y),
+            min(self.z, other.z),
+        )
+    }
+
+    pub fn max(self, other: Vec3) -> Vec3 {
+        Self::new(
+            max(self.x, other.x),
+            max(self.y, other.y),
+            max(self.z, other.z),
+        )
     }
 }
 
@@ -124,6 +141,19 @@ impl ops::Div<f32> for Vec3 {
 
     fn div(self, t: f32) -> Self::Output {
         (1.0 / t) * self
+    }
+}
+
+impl ops::Index<usize> for Vec3 {
+    type Output = f32;
+
+    fn index(&self, i: usize) -> &f32 {
+        match i {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("unknown vector component index"),
+        }
     }
 }
 

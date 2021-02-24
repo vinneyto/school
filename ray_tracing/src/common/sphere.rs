@@ -1,5 +1,7 @@
+use std::cmp;
 use std::sync::Arc;
 
+use super::aabb::*;
 use super::arena::*;
 use super::hittable::*;
 use super::ray::Ray;
@@ -47,6 +49,15 @@ impl Hittable for Sphere {
         let outward_normal = (record.p - self.center) / self.radius;
         record.set_face_normal(ray, outward_normal);
         record.material_handle = Some(self.material_handle);
+
+        true
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool {
+        *output_box = AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        );
 
         true
     }

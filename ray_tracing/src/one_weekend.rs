@@ -77,7 +77,10 @@ fn main() {
     let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
         ImageBuffer::from_vec(image_width, image_height, pixels).unwrap();
 
-    println!("rendered for {} ms", now.elapsed().as_millis());
+    println!(
+        "rendered for {} s",
+        now.elapsed().as_millis() as f32 / 1000.0
+    );
 
     #[cfg(not(feature = "precise"))]
     let path = "one_weekend.bmp";
