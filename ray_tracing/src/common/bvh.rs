@@ -34,25 +34,23 @@ impl BVHNode {
                 left = objects[0];
                 right = objects[0];
             }
-            2 => {
-                if comparator(objects[0], objects[1]) {
+            2 => match comparator(objects[0], objects[1]) {
+                Ordering::Greater => {
                     left = objects[0];
                     right = objects[1]
-                } else {
+                }
+                _ => {
                     left = objects[1];
                     right = objects[0]
                 }
-            }
+            },
             _ => {
                 let mut sorted = objects
                     .iter()
                     .map(|a| a.clone())
                     .collect::<Vec<HittableHandle>>();
 
-                sorted.sort_by(|a, b| match comparator(*a, *b) {
-                    true => Ordering::Greater,
-                    false => Ordering::Less,
-                });
+                sorted.sort_by(|a, b| comparator(*a, *b));
 
                 let mid = size / 2;
                 let start = 0;
@@ -114,7 +112,12 @@ impl Hittable for BVHNode {
     }
 }
 
-fn box_compare(arena: &HittableArena, a: HittableHandle, b: HittableHandle, axis: usize) -> bool {
+fn box_compare(
+    arena: &HittableArena,
+    a: HittableHandle,
+    b: HittableHandle,
+    axis: usize,
+) -> Ordering {
     let mut box_a = AABB::default();
     let mut box_b = AABB::default();
 
@@ -125,5 +128,9 @@ fn box_compare(arena: &HittableArena, a: HittableHandle, b: HittableHandle, axis
         panic!("No bounding box in bvh_node constructor.");
     };
 
-    box_a.minimum[axis] < box_b.minimum[axis]
+    if box_a.minimum[axis] < box_b.minimum[axis] {
+        Ordering::Greater
+    } else {
+        Ordering::Less
+    }
 }
