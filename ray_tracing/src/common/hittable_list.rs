@@ -9,12 +9,7 @@ pub struct HittableList {
 }
 
 impl HittableList {
-    pub fn new(arena: &HittableArena) -> Self {
-        let handles = arena
-            .iter()
-            .map(|(handle, _)| HittableHandle { handle })
-            .collect();
-
+    pub fn new(handles: Vec<HittableHandle>) -> Self {
         Self { handles }
     }
 }
@@ -32,11 +27,7 @@ impl Hittable for HittableList {
         let mut closest_so_far = t_max;
 
         for handle in &self.handles {
-            if arena
-                .get(*handle)
-                .unwrap()
-                .hit(arena, ray, t_min, closest_so_far, record)
-            {
+            if arena.hit(*handle, ray, t_min, closest_so_far, record) {
                 hit_anything = true;
                 closest_so_far = record.t;
             }
@@ -56,11 +47,7 @@ impl Hittable for HittableList {
         let mut first_box = true;
 
         for handle in &self.handles {
-            if !arena
-                .get(*handle)
-                .unwrap()
-                .bounding_box(arena, time0, time1, &mut temp_box)
-            {
+            if !arena.bounding_box(*handle, time0, time1, &mut temp_box) {
                 return false;
             }
             *output_box = if first_box {

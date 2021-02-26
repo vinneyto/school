@@ -170,5 +170,5 @@ fn random_scene(hittables: &mut HittableArena, materials: &mut MaterialArena) ->
     let m3 = materials.insert(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     hittables.insert(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, m3));
 
-    HittableList::new(hittables)
+    HittableList::new(hittables.all_handles())
 }

@@ -62,6 +62,12 @@ define_arenas! {
 }
 
 impl HittableArena {
+    pub fn all_handles(&self) -> Vec<HittableHandle> {
+        self.iter()
+            .map(|(handle, _)| HittableHandle { handle })
+            .collect()
+    }
+
     pub fn hit(
         &self,
         handle: HittableHandle,

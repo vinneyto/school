@@ -170,10 +170,5 @@ fn random_scene(hittables: &mut HittableArena, materials: &mut MaterialArena) ->
     let m3 = materials.insert(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     hittables.insert(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, m3));
 
-    let src_objects = hittables
-        .iter()
-        .map(|(handle, _)| HittableHandle { handle })
-        .collect::<Vec<HittableHandle>>();
-
-    BVHNode::new(hittables, &src_objects, 0.0, f32::MAX)
+    BVHNode::new(hittables, &hittables.all_handles(), 0.0, f32::MAX)
 }
