@@ -1,33 +1,31 @@
+use std::sync::Arc;
+
 use super::aabb::*;
-use super::arena::*;
 use super::hittable::*;
 use super::ray::*;
 
 #[derive(Default)]
 pub struct HittableList {
-    pub handles: Vec<HittableHandle>,
+    pub items: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
-    pub fn new(handles: Vec<HittableHandle>) -> Self {
-        Self { handles }
+    pub fn new() -> Self {
+        Self { items: vec![] }
+    }
+
+    pub fn add(&mut self, item: Arc<dyn Hittable>) {
+        self.items.push(item)
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(
-        &self,
-        arena: &HittableArena,
-        ray: &Ray,
-        t_min: f32,
-        t_max: f32,
-        record: &mut HitRecord,
-    ) -> bool {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
-        for handle in &self.handles {
-            if arena.hit(*handle, ray, t_min, closest_so_far, record) {
+        for hittable in &self.items {
+            if hittable.hit(ray, t_min, closest_so_far, record) {
                 hit_anything = true;
                 closest_so_far = record.t;
             }
@@ -36,18 +34,12 @@ impl Hittable for HittableList {
         return hit_anything;
     }
 
-    fn bounding_box(
-        &self,
-        arena: &HittableArena,
-        time0: f32,
-        time1: f32,
-        output_box: &mut AABB,
-    ) -> bool {
+    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool {
         let mut temp_box = AABB::default();
         let mut first_box = true;
 
-        for handle in &self.handles {
-            if !arena.bounding_box(*handle, time0, time1, &mut temp_box) {
+        for handle in &self.items {
+            if !handle.bounding_box(time0, time1, &mut temp_box) {
                 return false;
             }
             *output_box = if first_box {

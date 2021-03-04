@@ -1,5 +1,4 @@
 pub mod aabb;
-pub mod arena;
 pub mod bvh;
 pub mod camera;
 pub mod helpers;
@@ -11,7 +10,6 @@ pub mod sphere;
 pub mod vec3;
 
 pub use aabb::*;
-pub use arena::*;
 pub use bvh::*;
 pub use camera::*;
 pub use helpers::*;

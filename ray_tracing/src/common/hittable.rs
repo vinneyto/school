@@ -1,5 +1,7 @@
+use std::sync::Arc;
+
 use super::aabb::*;
-use super::arena::*;
+use super::material::*;
 use super::ray::*;
 use super::vec3::*;
 
@@ -9,7 +11,7 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub t: f32,
     pub front_face: bool,
-    pub material_handle: Option<MaterialHandle>,
+    pub material: Option<Arc<dyn Material>>,
 }
 
 impl HitRecord {
@@ -24,19 +26,6 @@ impl HitRecord {
 }
 
 pub trait Hittable: Sync + Send {
-    fn hit(
-        &self,
-        arena: &HittableArena,
-        ray: &Ray,
-        t_min: f32,
-        t_max: f32,
-        record: &mut HitRecord,
-    ) -> bool;
-    fn bounding_box(
-        &self,
-        arena: &HittableArena,
-        time0: f32,
-        time1: f32,
-        output_box: &mut AABB,
-    ) -> bool;
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
+    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool;
 }
