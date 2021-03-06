@@ -7,6 +7,7 @@ pub mod hittable_list;
 pub mod material;
 pub mod ray;
 pub mod sphere;
+pub mod triangle;
 pub mod vec3;
 
 pub use aabb::*;
@@ -18,4 +19,5 @@ pub use hittable_list::*;
 pub use material::*;
 pub use ray::*;
 pub use sphere::*;
+pub use triangle::*;
 pub use vec3::*;

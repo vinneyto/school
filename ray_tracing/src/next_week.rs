@@ -125,6 +125,16 @@ fn random_scene() -> BVHNode {
         ground_material,
     ));
 
+    let tt = Point3::new(3.0, 0.0, 1.0);
+
+    let triangle = Triangle::new_auto_normal(
+        Point3::new(-2.0, 0.0, 0.0) + tt,
+        Point3::new(0.0, 0.0, 2.0) + tt,
+        Point3::new(4.0, 3.0, 0.0) + tt,
+        Lambertian::new(Color::new(1.0, 0.0, 0.0)),
+    );
+    objects.push(triangle);
+
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat = random_f32();
