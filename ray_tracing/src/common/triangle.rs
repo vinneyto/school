@@ -10,28 +10,53 @@ pub struct Triangle {
     pub a: Point3,
     pub b: Point3,
     pub c: Point3,
-    pub na: Point3,
-    pub nb: Point3,
-    pub nc: Point3,
+    pub na: Vec3,
+    pub nb: Vec3,
+    pub nc: Vec3,
+    pub face_normal: Vec3,
     pub material: Arc<dyn Material>,
 }
 
 impl Triangle {
+    pub fn new(
+        a: Point3,
+        b: Point3,
+        c: Point3,
+        na: Vec3,
+        nb: Vec3,
+        nc: Vec3,
+        material: Arc<dyn Material>,
+    ) -> Arc<Self> {
+        let face_normal = (b - a).cross(c - a).unit_vector();
+
+        Arc::new(Self {
+            a,
+            b,
+            c,
+            na,
+            nb,
+            nc,
+            face_normal,
+            material,
+        })
+    }
+
     pub fn new_auto_normal(
         a: Point3,
         b: Point3,
         c: Point3,
         material: Arc<dyn Material>,
     ) -> Arc<Self> {
-        let normal = (b - a).cross(c - a).unit_vector();
+        let face_normal = (b - a).cross(c - a).unit_vector();
 
         Arc::new(Self {
             a,
             b,
             c,
-            na: normal,
-            nb: normal,
-            nc: normal,
+            na: face_normal,
+            nb: face_normal,
+            nc: face_normal,
+            face_normal,
             material,
         })
     }
@@ -72,9 +97,16 @@ impl Hittable for Triangle {
 
         record.t = t;
         record.p = ray.at(record.t);
-        let outward_normal = (self.na * u + self.nb * v + self.nc * w).unit_vector();
-        record.set_face_normal(ray, outward_normal);
+        let outward_normal = (self.na * w + self.nb * u + self.nc * v).unit_vector();
+        let front_face = ray.dir.dot(self.face_normal) < 0.0;
+        record.set_front_face_and_normal(front_face, outward_normal);
         record.material = Some(self.material.clone());
+        record.override_color = None;
+
+        // if w < 0.01 || u < 0.01 || v < 0.05 {
+        //         // record.override_color = Some(Color::new(0.0, 0.0, 0.0));
+        //     record.override_color = Some(record.normal);
+        // }
 
         true
     }

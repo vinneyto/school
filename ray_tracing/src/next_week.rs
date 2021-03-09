@@ -12,7 +12,7 @@ fn main() {
 
     // fast
     #[cfg(not(feature = "precise"))]
-    let image_width = 800;
+    let image_width = 1920;
     #[cfg(not(feature = "precise"))]
     let samples_per_pixel = 30;
     #[cfg(not(feature = "precise"))]
@@ -33,9 +33,9 @@ fn main() {
 
     // Camera
 
-    let look_from = Point3::new(13.0, 2.0, 3.0);
-    let look_at = Point3::new(0.0, 0.0, -1.0);
-    let v_up = Point3::new(0.0, 0.1, 0.0);
+    let look_from = Point3::new(0.0, 4.0, 10.0);
+    let look_at = Point3::new(0.0, 0.0, -3.0);
+    let v_up = Point3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
 
@@ -99,6 +99,10 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: i32) -> Color {
     }
 
     if world.hit(ray, 0.001, f32::MAX, &mut rec) && rec.material.is_some() {
+        if let Some(override_color) = rec.override_color {
+            return override_color;
+        }
+
         let material = rec.material.clone().unwrap();
         let mut scattered = Ray::default();
         let mut attenuation = Color::default();
@@ -125,25 +129,30 @@ fn random_scene() -> BVHNode {
         ground_material,
     ));
 
-    let tt = Point3::new(3.0, 0.0, 1.0);
+    // let tt = Point3::new(3.0, 0.0, 1.0);
 
-    let triangle = Triangle::new_auto_normal(
-        Point3::new(-2.0, 0.0, 0.0) + tt,
-        Point3::new(0.0, 0.0, 2.0) + tt,
-        Point3::new(4.0, 3.0, 0.0) + tt,
-        Lambertian::new(Color::new(1.0, 0.0, 0.0)),
-    );
-    objects.push(triangle);
+    // let triangle = Triangle::new_auto_normal(
+    //     Point3::new(-2.0, 0.0, 0.0) + tt,
+    //     Point3::new(0.0, 0.0, 2.0) + tt,
+    //     Point3::new(4.0, 3.0, 0.0) + tt,
+    //     Lambertian::new(Color::new(1.0, 0.0, 0.0)),
+    // );
+    // objects.push(triangle);
 
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat = random_f32();
 
-            let center = Point3::new(
+            let mut center = Point3::new(
                 a as f32 + 0.9 * random_f32(),
                 0.2,
                 b as f32 + 0.9 * random_f32(),
             );
+
+            if center.length() < 1.0 {
+                center.x *= 2.0;
+                center.z *= 2.0;
+            }
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 let material: Arc<dyn Material> = if choose_mat < 0.8 {
@@ -164,23 +173,28 @@ fn random_scene() -> BVHNode {
         }
     }
 
-    objects.push(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0),
-        1.0,
-        Dielectric::new(1.5),
-    ));
+    // objects.push(Sphere::new(
+    //     Point3::new(0.0, 1.0, 0.0),
+    //     1.0,
+    //     Dielectric::new(1.5),
+    // ));
 
-    objects.push(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0),
-        1.0,
-        Lambertian::new(Color::new(0.4, 0.2, 0.1)),
-    ));
+    // objects.push(Sphere::new(
+    //     Point3::new(-4.0, 1.0, 0.0),
+    //     1.0,
+    //     Lambertian::new(Color::new(0.4, 0.2, 0.1)),
+    // ));
 
-    objects.push(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0),
-        1.0,
-        Metal::new(Color::new(0.7, 0.6, 0.5), 0.0),
-    ));
+    // objects.push(Sphere::new(
+    //     Point3::new(4.0, 1.0, 0.0),
+    //     1.0,
+    //     Metal::new(Color::new(0.7, 0.6, 0.5), 0.0),
+    // ));
+
+    // let cup_material = Lambertian::new(Color::new(0.3, 0.8, 0.6));
+    let cup_material = Dielectric::new(1.5);
+
+    objects.push(bake_cup_mesh(cup_material));
 
     BVHNode::new(&objects, 0.0, f32::MAX)
 }

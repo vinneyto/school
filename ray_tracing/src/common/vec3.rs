@@ -17,7 +17,15 @@ pub type Color = Vec3;
 
 impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vec3 { x, y, z }
+        Self { x, y, z }
+    }
+
+    pub fn from_array(array: &[f32], index: usize) -> Self {
+        let x = array[index];
+        let y = array[index + 1];
+        let z = array[index + 2];
+
+        Self { x, y, z }
     }
 
     pub fn random() -> Self {

@@ -12,16 +12,22 @@ pub struct HitRecord {
     pub t: f32,
     pub front_face: bool,
     pub material: Option<Arc<dyn Material>>,
+    pub override_color: Option<Color>,
 }
 
 impl HitRecord {
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
-        self.front_face = ray.dir.dot(outward_normal) < 0.0;
+    pub fn set_front_face_and_normal(&mut self, front_face: bool, outward_normal: Vec3) {
+        self.front_face = front_face;
         self.normal = if self.front_face {
             outward_normal
         } else {
             -outward_normal
         }
+    }
+
+    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
+        let front_face = ray.dir.dot(outward_normal) < 0.0;
+        self.set_front_face_and_normal(front_face, outward_normal);
     }
 }
 
