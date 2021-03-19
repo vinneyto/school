@@ -12,7 +12,7 @@ fn main() {
 
     // fast
     #[cfg(not(feature = "precise"))]
-    let image_width = 1920;
+    let image_width = 800;
     #[cfg(not(feature = "precise"))]
     let samples_per_pixel = 30;
     #[cfg(not(feature = "precise"))]
@@ -129,16 +129,6 @@ fn random_scene() -> BVHNode {
         ground_material,
     ));
 
-    // let tt = Point3::new(3.0, 0.0, 1.0);
-
-    // let triangle = Triangle::new_auto_normal(
-    //     Point3::new(-2.0, 0.0, 0.0) + tt,
-    //     Point3::new(0.0, 0.0, 2.0) + tt,
-    //     Point3::new(4.0, 3.0, 0.0) + tt,
-    //     Lambertian::new(Color::new(1.0, 0.0, 0.0)),
-    // );
-    // objects.push(triangle);
-
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat = random_f32();
@@ -191,10 +181,10 @@ fn random_scene() -> BVHNode {
     //     Metal::new(Color::new(0.7, 0.6, 0.5), 0.0),
     // ));
 
-    // let cup_material = Lambertian::new(Color::new(0.3, 0.8, 0.6));
-    let cup_material = Dielectric::new(1.5);
+    let cup_material = Lambertian::new(Color::new(0.3, 0.8, 0.6));
+    // let cup_material = Dielectric::new(1.5);
 
-    objects.push(bake_cup_mesh(cup_material));
+    objects.push(bake_monkey_mesh(cup_material));
 
     BVHNode::new(&objects, 0.0, f32::MAX)
 }

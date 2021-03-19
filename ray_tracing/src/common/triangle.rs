@@ -40,26 +40,6 @@ impl Triangle {
             material,
         })
     }
-
-    pub fn new_auto_normal(
-        a: Point3,
-        b: Point3,
-        c: Point3,
-        material: Arc<dyn Material>,
-    ) -> Arc<Self> {
-        let face_normal = (b - a).cross(c - a).unit_vector();
-
-        Arc::new(Self {
-            a,
-            b,
-            c,
-            na: face_normal,
-            nb: face_normal,
-            nc: face_normal,
-            face_normal,
-            material,
-        })
-    }
 }
 
 impl Hittable for Triangle {
