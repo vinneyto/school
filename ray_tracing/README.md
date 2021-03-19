@@ -20,3 +20,5 @@ const extract = (mesh) => {
   return data;
 };
 ```
+
+![monkey_diffuse](https://github.com/vinneyto/school/blob/main/ray_tracing/monkey_diffuse.jpg?raw=true)
