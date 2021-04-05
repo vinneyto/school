@@ -5,6 +5,7 @@ use rand::prelude::*;
 use super::helpers::*;
 use super::hittable::*;
 use super::ray::*;
+use super::texture::*;
 use super::vec3::*;
 
 pub trait Material: Sync + Send {
@@ -17,13 +18,12 @@ pub trait Material: Sync + Send {
     ) -> bool;
 }
 
-#[derive(Debug)]
 pub struct Lambertian {
-    pub albedo: Color,
+    pub albedo: Arc<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Arc<Self> {
+    pub fn new(albedo: Arc<dyn Texture>) -> Arc<Self> {
         Arc::new(Self { albedo })
     }
 }
@@ -43,7 +43,7 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray::new(rec.p, scatter_direction);
-        *attenuation = self.albedo;
+        *attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
         true
     }
 }

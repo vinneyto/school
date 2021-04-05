@@ -8,7 +8,9 @@ pub mod material;
 pub mod meshes;
 pub mod ray;
 pub mod sphere;
+pub mod texture;
 pub mod triangle;
+pub mod vec2;
 pub mod vec3;
 
 pub use aabb::*;
@@ -21,5 +23,7 @@ pub use material::*;
 pub use meshes::*;
 pub use ray::*;
 pub use sphere::*;
+pub use texture::*;
 pub use triangle::*;
+pub use vec2::*;
 pub use vec3::*;

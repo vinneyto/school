@@ -117,7 +117,8 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Color {
 
 fn random_scene() -> HittableList {
     let mut world = HittableList::new();
-    let ground_material = Lambertian::new(Color::new(0.5, 0.5, 0.5));
+    let ground_texture = SolidColor::new(Color::new(0.5, 0.5, 0.5));
+    let ground_material = Lambertian::new(ground_texture);
     world.add(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -138,7 +139,7 @@ fn random_scene() -> HittableList {
                 let material: Arc<dyn Material> = if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
-                    Lambertian::new(albedo)
+                    Lambertian::new(SolidColor::new(albedo))
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
@@ -156,7 +157,7 @@ fn random_scene() -> HittableList {
     let m1 = Dielectric::new(1.5);
     world.add(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, m1));
 
-    let m2 = Lambertian::new(Color::new(0.4, 0.2, 0.1));
+    let m2 = Lambertian::new(SolidColor::new(Color::new(0.4, 0.2, 0.1)));
     world.add(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, m2));
 
     let m3 = Metal::new(Color::new(0.7, 0.6, 0.5), 0.0);

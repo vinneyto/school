@@ -121,7 +121,8 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: i32) -> Color {
 
 fn random_scene() -> BVHNode {
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
-    let ground_material = Lambertian::new(Color::new(0.5, 0.5, 0.5));
+    let ground_texture = SolidColor::new(Color::new(0.5, 0.5, 0.5));
+    let ground_material = Lambertian::new(ground_texture);
 
     objects.push(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
@@ -148,7 +149,8 @@ fn random_scene() -> BVHNode {
                 let material: Arc<dyn Material> = if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
-                    Lambertian::new(albedo)
+                    let texture = SolidColor::new(albedo);
+                    Lambertian::new(texture)
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
@@ -181,7 +183,11 @@ fn random_scene() -> BVHNode {
     //     Metal::new(Color::new(0.7, 0.6, 0.5), 0.0),
     // ));
 
-    let cup_material = Lambertian::new(Color::new(0.3, 0.8, 0.6));
+    let cup_color1 = SolidColor::new(Color::new(0.3, 0.8, 0.6));
+    let cup_color2 = SolidColor::new(Color::new(0.9, 0.9, 0.9));
+
+    let cup_texture = CheckerTexture::new(cup_color1, cup_color2, 200.0);
+    let cup_material = Lambertian::new(cup_texture);
     // let cup_material = Dielectric::new(1.5);
 
     objects.push(bake_monkey_mesh(cup_material));

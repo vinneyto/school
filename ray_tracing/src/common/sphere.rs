@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::sync::Arc;
 
 use super::aabb::*;
@@ -46,6 +47,7 @@ impl Hittable for Sphere {
         record.t = root;
         record.p = ray.at(record.t);
         let outward_normal = (record.p - self.center) / self.radius;
+        get_sphere_ui(&outward_normal, &mut record.u, &mut record.v);
         record.set_face_normal(ray, outward_normal);
         record.material = Some(self.material.clone());
 
@@ -60,4 +62,12 @@ impl Hittable for Sphere {
 
         true
     }
+}
+
+fn get_sphere_ui(n: &Vec3, u: &mut f32, v: &mut f32) {
+    let theta = (-n.y).acos();
+    let phi = (-n.z).atan2(n.x) + PI;
+
+    *u = phi / (2.0 * PI);
+    *v = theta / PI;
 }

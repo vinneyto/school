@@ -7,6 +7,7 @@ use super::bvh::*;
 use super::hittable::*;
 use super::material::*;
 use super::triangle::*;
+use super::vec2::*;
 use super::vec3::*;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -33,19 +34,27 @@ pub fn bake_cup_mesh(material: Arc<dyn Material>) -> Arc<dyn Hittable> {
     let shift = Point3::new(0.0, 0.9, 0.0);
 
     for i in (0..donut.cup.index.len()).step_by(3) {
-        let ai = (donut.cup.index[i] * 3) as usize;
-        let bi = (donut.cup.index[i + 1] * 3) as usize;
-        let ci = (donut.cup.index[i + 2] * 3) as usize;
+        let ai = donut.cup.index[i] as usize;
+        let bi = donut.cup.index[i + 1] as usize;
+        let ci = donut.cup.index[i + 2] as usize;
 
-        let a = Point3::from_array(&donut.cup.position, ai) * 20.0 + shift;
-        let b = Point3::from_array(&donut.cup.position, bi) * 20.0 + shift;
-        let c = Point3::from_array(&donut.cup.position, ci) * 20.0 + shift;
+        let a = Point3::from_array(&donut.cup.position, ai * 3) * 20.0 + shift;
+        let b = Point3::from_array(&donut.cup.position, bi * 3) * 20.0 + shift;
+        let c = Point3::from_array(&donut.cup.position, ci * 3) * 20.0 + shift;
 
-        let na = Point3::from_array(&donut.cup.normal, ai);
-        let nb = Point3::from_array(&donut.cup.normal, bi);
-        let nc = Point3::from_array(&donut.cup.normal, ci);
+        let na = Point3::from_array(&donut.cup.normal, ai * 3);
+        let nb = Point3::from_array(&donut.cup.normal, bi * 3);
+        let nc = Point3::from_array(&donut.cup.normal, ci * 3);
 
-        let triangle = Triangle::new(a, b, c, na, nb, nc, material.clone());
+        let ta = Point2::from_array(&donut.cup.uv, ai * 2);
+        let tb = Point2::from_array(&donut.cup.uv, bi * 2);
+        let tc = Point2::from_array(&donut.cup.uv, ci * 2);
+
+        let position = Attribute::new(a, b, c);
+        let normal = Attribute::new(na, nb, nc);
+        let uv = Attribute::new(ta, tb, tc);
+
+        let triangle = Triangle::new(position, normal, uv, material.clone());
 
         trinagles.push(triangle);
     }
@@ -63,19 +72,27 @@ pub fn bake_monkey_mesh(material: Arc<dyn Material>) -> Arc<dyn Hittable> {
     let shift = Point3::new(0.0, 1.0, 0.0);
 
     for i in (0..monkey.index.len()).step_by(3) {
-        let ai = (monkey.index[i] * 3) as usize;
-        let bi = (monkey.index[i + 1] * 3) as usize;
-        let ci = (monkey.index[i + 2] * 3) as usize;
+        let ai = monkey.index[i] as usize;
+        let bi = monkey.index[i + 1] as usize;
+        let ci = monkey.index[i + 2] as usize;
 
-        let a = Point3::from_array(&monkey.position, ai) + shift;
-        let b = Point3::from_array(&monkey.position, bi) + shift;
-        let c = Point3::from_array(&monkey.position, ci) + shift;
+        let a = Point3::from_array(&monkey.position, ai * 3) + shift;
+        let b = Point3::from_array(&monkey.position, bi * 3) + shift;
+        let c = Point3::from_array(&monkey.position, ci * 3) + shift;
 
-        let na = Point3::from_array(&monkey.normal, ai);
-        let nb = Point3::from_array(&monkey.normal, bi);
-        let nc = Point3::from_array(&monkey.normal, ci);
+        let na = Point3::from_array(&monkey.normal, ai * 3);
+        let nb = Point3::from_array(&monkey.normal, bi * 3);
+        let nc = Point3::from_array(&monkey.normal, ci * 3);
 
-        let triangle = Triangle::new(a, b, c, na, nb, nc, material.clone());
+        let ta = Point2::from_array(&monkey.uv, ai * 2);
+        let tb = Point2::from_array(&monkey.uv, bi * 2);
+        let tc = Point2::from_array(&monkey.uv, ci * 2);
+
+        let position = Attribute::new(a, b, c);
+        let normal = Attribute::new(na, nb, nc);
+        let uv = Attribute::new(ta, tb, tc);
+
+        let triangle = Triangle::new(position, normal, uv, material.clone());
 
         trinagles.push(triangle);
     }

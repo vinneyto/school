@@ -4,38 +4,43 @@ use super::aabb::*;
 use super::hittable::*;
 use super::material::*;
 use super::ray::*;
+use super::vec2::*;
 use super::vec3::*;
 
+pub struct Attribute<T> {
+    pub a: T,
+    pub b: T,
+    pub c: T,
+}
+
+impl<T> Attribute<T> {
+    pub fn new(a: T, b: T, c: T) -> Self {
+        Attribute { a, b, c }
+    }
+}
+
 pub struct Triangle {
-    pub a: Point3,
-    pub b: Point3,
-    pub c: Point3,
-    pub na: Vec3,
-    pub nb: Vec3,
-    pub nc: Vec3,
+    pub position: Attribute<Vec3>,
+    pub normal: Attribute<Vec3>,
+    pub uv: Attribute<Vec2>,
     pub face_normal: Vec3,
     pub material: Arc<dyn Material>,
 }
 
 impl Triangle {
     pub fn new(
-        a: Point3,
-        b: Point3,
-        c: Point3,
-        na: Vec3,
-        nb: Vec3,
-        nc: Vec3,
+        position: Attribute<Vec3>,
+        normal: Attribute<Vec3>,
+        uv: Attribute<Vec2>,
         material: Arc<dyn Material>,
     ) -> Arc<Self> {
+        let Attribute { a, b, c } = position;
         let face_normal = (b - a).cross(c - a).unit_vector();
 
         Arc::new(Self {
-            a,
-            b,
-            c,
-            na,
-            nb,
-            nc,
+            position,
+            normal,
+            uv,
             face_normal,
             material,
         })
@@ -44,8 +49,19 @@ impl Triangle {
 
 impl Hittable for Triangle {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
-        let e1 = self.b - self.a;
-        let e2 = self.c - self.a;
+        let Attribute { a, b, c } = self.position;
+        let Attribute {
+            a: na,
+            b: nb,
+            c: nc,
+        } = self.normal;
+        let Attribute {
+            a: ta,
+            b: tb,
+            c: tc,
+        } = self.uv;
+        let e1 = b - a;
+        let e2 = c - a;
         let x = ray.dir.cross(e2);
         let d = e1.dot(x);
         let eps = 1e-6;
@@ -55,7 +71,7 @@ impl Hittable for Triangle {
         }
 
         let f = 1.0 / d;
-        let s = ray.orig - self.a;
+        let s = ray.orig - a;
         let y = s.cross(e1);
         let t = f * e2.dot(y);
 
@@ -77,9 +93,12 @@ impl Hittable for Triangle {
 
         record.t = t;
         record.p = ray.at(record.t);
-        let outward_normal = (self.na * w + self.nb * u + self.nc * v).unit_vector();
+        let outward_normal = na * w + nb * u + nc * v;
         let front_face = ray.dir.dot(self.face_normal) < 0.0;
         record.set_front_face_and_normal(front_face, outward_normal);
+        let uv = ta * w + tb * u + tc * v;
+        record.u = uv.x;
+        record.v = uv.y;
         record.material = Some(self.material.clone());
         record.override_color = None;
 
@@ -92,10 +111,9 @@ impl Hittable for Triangle {
     }
 
     fn bounding_box(&self, _time0: f32, _time1: f32, output_box: &mut AABB) -> bool {
-        *output_box = AABB::new(
-            self.a.min(self.b).min(self.c),
-            self.a.max(self.b).max(self.c),
-        );
+        let Attribute { a, b, c } = self.position;
+
+        *output_box = AABB::new(a.min(b).min(c), a.max(b).max(c));
 
         true
     }
