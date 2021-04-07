@@ -121,6 +121,8 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: i32) -> Color {
 
 fn random_scene() -> BVHNode {
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+    let image_texture = ImageTexture::new("./assets/bricks.jpeg", Vec2::new(0.5, 0.5));
+
     let ground_texture = SolidColor::new(Color::new(0.5, 0.5, 0.5));
     let ground_material = Lambertian::new(ground_texture);
 
@@ -148,9 +150,9 @@ fn random_scene() -> BVHNode {
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 let material: Arc<dyn Material> = if choose_mat < 0.8 {
                     // diffuse
-                    let albedo = Color::random() * Color::random();
-                    let texture = SolidColor::new(albedo);
-                    Lambertian::new(texture)
+                    // let albedo = Color::random() * Color::random();
+                    // let texture = SolidColor::new(albedo);
+                    Lambertian::new(image_texture.clone())
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);

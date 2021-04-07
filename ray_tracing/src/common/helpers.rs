@@ -1,3 +1,4 @@
+use image::{Pixel, Rgb};
 use rand::prelude::*;
 
 use super::vec3::*;
@@ -27,6 +28,15 @@ pub fn to_rgb(color: &Color, samples_per_pixel: u32) -> Vec<u8> {
         (256.0 * clamp(g, 0.0, 0.999)) as u8,
         (256.0 * clamp(b, 0.0, 0.999)) as u8,
     ]
+}
+
+pub fn from_rgb(pixel: &Rgb<u8>) -> Color {
+    let channels = pixel.channels();
+
+    let r = channels[0] as f32 / 255.0;
+    let g = channels[1] as f32 / 255.0;
+    let b = channels[2] as f32 / 255.0;
+    Color::new(r, g, b)
 }
 
 pub fn random_f32() -> f32 {

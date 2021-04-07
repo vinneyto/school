@@ -64,8 +64,14 @@ impl Hittable for Sphere {
     }
 }
 
-fn get_sphere_ui(n: &Vec3, u: &mut f32, v: &mut f32) {
-    let theta = (-n.y).acos();
+pub fn get_sphere_ui(n: &Vec3, u: &mut f32, v: &mut f32) {
+    let mut y = n.y;
+
+    if 1.0 - n.y.abs() < 0.0001 {
+        y = if n.y < 0.0 { -0.99999 } else { 0.99999 };
+    }
+
+    let theta = (-y).acos();
     let phi = (-n.z).atan2(n.x) + PI;
 
     *u = phi / (2.0 * PI);
