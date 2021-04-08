@@ -64,17 +64,39 @@ impl Texture for DebugUVTexture {
     }
 }
 
+pub enum TextureFiltering {
+    Linear,
+    Nearest,
+}
+
+pub enum TextureFlip {
+    AsIs,
+    FlipY,
+}
+
 pub struct ImageTexture {
     pub image: ImageBuffer<Rgb<u8>, Vec<u8>>,
+    pub filtering: TextureFiltering,
+    pub flip: TextureFlip,
     pub repeating: Vec2,
 }
 
 impl ImageTexture {
-    pub fn new(path: &str, repeating: Vec2) -> Arc<Self> {
+    pub fn new(
+        path: &str,
+        filtering: TextureFiltering,
+        flip: TextureFlip,
+        repeating: Vec2,
+    ) -> Arc<Self> {
         let image = open_image(path).unwrap();
         let image = image.as_rgb8().unwrap().clone();
 
-        Arc::new(ImageTexture { image, repeating })
+        Arc::new(ImageTexture {
+            image,
+            filtering,
+            flip,
+            repeating,
+        })
     }
 }
 
@@ -94,25 +116,37 @@ impl Texture for ImageTexture {
             v = v + 1.0;
         }
 
+        v = match self.flip {
+            TextureFlip::AsIs => v,
+            TextureFlip::FlipY => 1.0 - v,
+        };
+
         let px = u * (w - 1.0);
         let py = v * (h - 1.0);
 
-        let px_from = px.floor();
-        let py_from = py.floor();
+        match self.filtering {
+            TextureFiltering::Nearest => {
+                from_rgb(self.image.get_pixel(px.round() as u32, py.round() as u32))
+            }
+            TextureFiltering::Linear => {
+                let px_from = px.floor();
+                let py_from = py.floor();
 
-        let px_to = px.ceil();
-        let py_to = py.ceil();
+                let px_to = px.ceil();
+                let py_to = py.ceil();
 
-        let c00 = from_rgb(self.image.get_pixel(px_from as u32, py_from as u32));
-        let c10 = from_rgb(self.image.get_pixel(px_to as u32, py_from as u32));
-        let c01 = from_rgb(self.image.get_pixel(px_from as u32, py_to as u32));
-        let c11 = from_rgb(self.image.get_pixel(px_to as u32, py_to as u32));
+                let c00 = from_rgb(self.image.get_pixel(px_from as u32, py_from as u32));
+                let c10 = from_rgb(self.image.get_pixel(px_to as u32, py_from as u32));
+                let c01 = from_rgb(self.image.get_pixel(px_from as u32, py_to as u32));
+                let c11 = from_rgb(self.image.get_pixel(px_to as u32, py_to as u32));
 
-        let a00 = (px - px_from) * (py - py_from);
-        let a10 = (px_to - px) * (py - py_from);
-        let a01 = (px - px_from) * (py_to - py);
-        let a11 = (px_to - px) * (py_to - py);
+                let a00 = (px_to - px) * (py_to - py);
+                let a10 = (px - px_from) * (py_to - py);
+                let a01 = (px_to - px) * (py - py_from);
+                let a11 = (px - px_from) * (py - py_from);
 
-        return c00 * a00 + c10 * a10 + c01 * a01 + c11 * a11;
+                c00 * a00 + c10 * a10 + c01 * a01 + c11 * a11
+            }
+        }
     }
 }

@@ -121,7 +121,12 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: i32) -> Color {
 
 fn random_scene() -> BVHNode {
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
-    let image_texture = ImageTexture::new("./assets/bricks.jpeg", Vec2::new(0.5, 0.5));
+    let image_texture = ImageTexture::new(
+        "./assets/bricks.jpeg",
+        TextureFiltering::Linear,
+        TextureFlip::FlipY,
+        Vec2::new(0.5, 0.5),
+    );
 
     let ground_texture = SolidColor::new(Color::new(0.5, 0.5, 0.5));
     let ground_material = Lambertian::new(ground_texture);
