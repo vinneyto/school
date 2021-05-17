@@ -22,7 +22,7 @@ fn main() {
     #[cfg(feature = "precise")]
     let image_width = 1920;
     #[cfg(feature = "precise")]
-    let samples_per_pixel = 1000;
+    let samples_per_pixel = 2000;
     #[cfg(feature = "precise")]
     let max_depth = 100;
 
@@ -50,6 +50,7 @@ fn main() {
     );
 
     let now = Instant::now();
+    let background = Color::new(0.0, 0.0, 0.0);
 
     println!("begin rendering...");
 
@@ -66,7 +67,7 @@ fn main() {
                 let vv = (y as f32 + rnd.gen::<f32>()) / (image_height - 1) as f32;
                 let v = 1.0 - vv;
                 let ray = camera.get_ray(u, v);
-                pixel_color += ray_color(&ray, &world, max_depth);
+                pixel_color += ray_color(&ray, &background, &world, max_depth);
             }
 
             to_rgb(&pixel_color, samples_per_pixel)
@@ -91,7 +92,7 @@ fn main() {
     img.save(path).unwrap();
 }
 
-fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: i32) -> Color {
+fn ray_color<T: Hittable>(ray: &Ray, background: &Color, world: &T, depth: i32) -> Color {
     let mut rec = HitRecord::default();
 
     if depth <= 0 {
@@ -106,17 +107,15 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, depth: i32) -> Color {
         let material = rec.material.clone().unwrap();
         let mut scattered = Ray::default();
         let mut attenuation = Color::default();
-
-        if material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * ray_color(&scattered, world, depth - 1);
+        let emitted = material.emitted(rec.u, rec.v, &rec.p);
+        if !material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
+            return emitted;
         }
 
-        return Color::new(0.0, 0.0, 0.0);
+        return emitted + attenuation * ray_color(&scattered, &background, world, depth - 1);
     }
 
-    let unit_direction = ray.dir.unit_vector();
-    let t = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0);
+    *background
 }
 
 fn random_scene() -> BVHNode {
@@ -158,11 +157,12 @@ fn random_scene() -> BVHNode {
                     // let albedo = Color::random() * Color::random();
                     // let texture = SolidColor::new(albedo);
                     Lambertian::new(image_texture.clone())
-                } else if choose_mat < 0.95 {
+                } else if choose_mat < 1.2 {
                     // metal
-                    let albedo = Color::random_range(0.5, 1.0);
-                    let fuzz = random_f32_range(0.0, 0.5);
-                    Metal::new(albedo, fuzz)
+                    // let albedo = Color::random_range(0.5, 1.0);
+                    // let fuzz = random_f32_range(0.0, 0.5);
+                    // Metal::new(albedo, fuzz)
+                    DiffuseLight::new(Color::new(1.0, 1.0, 1.0))
                 } else {
                     // glass
                     Dielectric::new(1.5)

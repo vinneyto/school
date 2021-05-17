@@ -16,6 +16,10 @@ pub trait Material: Sync + Send {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
+
+    fn emitted(&self, _u: f32, _v: f32, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
 }
 
 pub struct Lambertian {
@@ -123,6 +127,32 @@ impl Material for Dielectric {
 
         *scattered = Ray::new(rec.p, direction);
         return true;
+    }
+}
+
+pub struct DiffuseLight {
+    pub color: Color,
+}
+
+impl DiffuseLight {
+    pub fn new(color: Color) -> Arc<Self> {
+        Arc::new(Self { color })
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(
+        &self,
+        _: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        false
+    }
+
+    fn emitted(&self, _u: f32, _v: f32, _p: &Point3) -> Color {
+        self.color
     }
 }
 
