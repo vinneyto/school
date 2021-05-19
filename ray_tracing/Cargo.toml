@@ -16,6 +16,9 @@ rayon = "1.5.0"
 partial-min-max = "0.4.0"
 serde = { version = "1.0.124", features = ["derive"] }
 serde_json = "1.0.59"
+vulkano = "0.23.0"
+vulkano-shaders = "0.23.0"
+nalgebra = "0.26.2"
 
 [[bin]]
 name = "one_weekend"
@@ -24,3 +27,7 @@ path = "src/one_weekend.rs"
 [[bin]]
 name = "next_week"
 path = "src/next_week.rs"
+
+[[bin]]
+name = "one_weekend_vk"
+path = "src/one_weekend_vk.rs"
