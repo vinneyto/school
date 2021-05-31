@@ -1,7 +1,7 @@
 extern crate nalgebra as na;
 
 use image::{ImageBuffer, Rgb};
-use na::{Point3, Point4};
+use na::Vector3;
 use std::sync::Arc;
 use std::time::Instant;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
@@ -17,17 +17,23 @@ use vulkano::sync::GpuFuture;
 use ray_tracing::clamp;
 
 fn main() {
-    let image_width = 800;
-    let image_height = 600;
+    let image_width = 1920;
+    let image_height = 1080;
 
     let now = Instant::now();
     println!("begin rendering...");
 
-    let color_data = compute(
+    let params = ComputeParams {
         image_width,
         image_height,
-        &[Primitive::sphere(Point3::new(1.0, 2.0, 3.0), 0.5)],
-    );
+        position: vec![Attribute {
+            a: Vector3::new(0.0, 0.0, -1.0),
+            b: Vector3::new(1.0, 0.0, -1.0),
+            c: Vector3::new(0.0, 1.0, -1.0),
+        }],
+    };
+
+    let color_data = compute(params);
 
     println!(
         "rendered for {} s",
@@ -57,37 +63,38 @@ const BUFFER_USAGE: BufferUsage = BufferUsage {
 
 const GROUP_SIZE: u32 = 32;
 
-struct Primitive {
-    pub a: Point4<f32>,
-    pub b: Point4<f32>,
-    pub c: Point4<f32>,
-    pub d: Point4<f32>,
+struct Attribute {
+    pub a: Vector3<f32>,
+    pub b: Vector3<f32>,
+    pub c: Vector3<f32>,
 }
 
-impl Primitive {
-    pub fn sphere(center: Point3<f32>, radius: f32) -> Self {
-        Self {
-            a: Point4::new(center.x, center.y, center.z, radius),
-            b: Point4::new(0.0, 0.0, 0.0, 0.0),
-            c: Point4::new(0.0, 0.0, 0.0, 0.0),
-            d: Point4::new(0.0, 0.0, 0.0, 0.0),
-        }
-    }
+struct ComputeParams {
+    image_width: u32,
+    image_height: u32,
+    position: Vec<Attribute>,
 }
 
-fn compute(image_width: u32, image_height: u32, primitives: &[Primitive]) -> Vec<u8> {
+fn compute(params: ComputeParams) -> Vec<u8> {
+    let ComputeParams {
+        image_width,
+        image_height,
+        position,
+    } = params;
+
     // prepare data
 
     let pixels_count = image_width * image_height;
     let uniforms = [image_width as f32, image_height as f32];
-    let primitives_data = primitives
+
+    // data
+    let position_data = position
         .iter()
         .map(|p| {
             vec![
-                p.a.x, p.a.y, p.a.z, p.a.w, //
-                p.b.x, p.b.y, p.b.z, p.b.w, //
-                p.c.x, p.c.y, p.c.z, p.c.w, //
-                p.d.x, p.d.y, p.d.z, p.d.w, //
+                p.a.x, p.a.y, p.a.z, 0.0, //
+                p.b.x, p.b.y, p.b.z, 0.0, //
+                p.c.x, p.c.y, p.c.z, 0.0,
             ]
         })
         .flatten()
@@ -121,12 +128,12 @@ fn compute(image_width: u32, image_height: u32, primitives: &[Primitive]) -> Vec
         mod cs {
             vulkano_shaders::shader! {
                 ty: "compute",
-                path: "./src/one_weekend_vk.glsl"
+                path: "./src/shaders/one_weekend_vk.glsl"
             }
         }
         let shader = cs::Shader::load(device.clone()).unwrap();
         let spec_const = cs::SpecializationConstants {
-            primitive_count: primitives.len() as u32,
+            primitive_count: position.len() as u32,
         };
         ComputePipeline::new(
             device.clone(),
@@ -151,7 +158,7 @@ fn compute(image_width: u32, image_height: u32, primitives: &[Primitive]) -> Vec
     };
 
     let primitives_buffer = {
-        let data_iter = primitives_data.iter().map(|x| *x);
+        let data_iter = position_data.iter().map(|x| *x);
         CpuAccessibleBuffer::from_iter(device.clone(), BUFFER_USAGE, false, data_iter).unwrap()
     };
 
