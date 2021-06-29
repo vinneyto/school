@@ -1,4 +1,3 @@
-use std::env;
 use std::time::Instant;
 
 use image::{ImageBuffer, Rgb};
@@ -7,28 +6,33 @@ use rayon::prelude::*;
 
 use crate::common::*;
 
-pub fn render_world<T: Hittable>(world: T, camera: Camera) {
-    // fast
-    #[cfg(not(feature = "precise"))]
-    let image_width = 800;
-    #[cfg(not(feature = "precise"))]
-    let samples_per_pixel = 30;
-    #[cfg(not(feature = "precise"))]
-    let max_depth = 30;
+pub struct RenderingParams<T: Hittable> {
+    pub world: T,
+    pub camera: Camera,
+    pub image_width: u32,
+    pub samples_per_pixel: u32,
+    pub max_depth: i32,
+    pub aspect_ratio: f32,
+    pub path: String,
+    pub background: Color,
+}
 
-    // precise
-    #[cfg(feature = "precise")]
-    let image_width = 1920;
-    #[cfg(feature = "precise")]
-    let samples_per_pixel = 2000;
-    #[cfg(feature = "precise")]
-    let max_depth = 100;
+pub fn render_world<T: Hittable>(params: RenderingParams<T>) {
+    let RenderingParams {
+        world,
+        camera,
+        image_width,
+        samples_per_pixel,
+        max_depth,
+        aspect_ratio,
+        path,
+        background,
+    } = params;
 
-    let aspect_ratio = 16.0 / 9.0;
+    // let aspect_ratio = 16.0 / 9.0;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     let now = Instant::now();
-    let background = Color::new(0.0, 0.0, 0.0);
 
     println!("begin rendering...");
 
@@ -61,17 +65,7 @@ pub fn render_world<T: Hittable>(world: T, camera: Camera) {
         now.elapsed().as_millis() as f32 / 1000.0
     );
 
-    let p = env::current_exe().unwrap();
-    let name = p.file_name().unwrap();
-    let s_name = name.to_str().unwrap();
-
-    #[cfg(not(feature = "precise"))]
-    let path = format!("{}.bmp", s_name);
-
-    #[cfg(feature = "precise")]
-    let path = format!("{}_precise.bmp", s_name);
-
-    println!("saving {}", path);
+    println!("saving -> {}", path);
 
     img.save(path).unwrap();
 }
@@ -91,7 +85,7 @@ pub fn ray_color<T: Hittable>(ray: &Ray, background: &Color, world: &T, depth: i
         let material = rec.material.clone().unwrap();
         let mut scattered = Ray::default();
         let mut attenuation = Color::default();
-        let emitted = material.emitted(rec.u, rec.v, &rec.p);
+        let emitted = material.emitted(&rec);
         if !material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
             return emitted;
         }

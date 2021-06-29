@@ -8,6 +8,9 @@
     cargo run --bin next_week --release
     cargo run --bin next_week --features="precise" --release
 
+    cargo run --bin next_week --release -- cornell
+    cargo run --bin next_week --features="precise" --release -- cornell
+
 # How to extreact data from three mesh
 
 ```javascript

@@ -8,6 +8,12 @@ use super::ray::*;
 use super::texture::*;
 use super::vec3::*;
 
+pub enum Side {
+    Front,
+    Back,
+    Double,
+}
+
 pub trait Material: Sync + Send {
     fn scatter(
         &self,
@@ -17,7 +23,7 @@ pub trait Material: Sync + Send {
         scattered: &mut Ray,
     ) -> bool;
 
-    fn emitted(&self, _u: f32, _v: f32, _p: &Point3) -> Color {
+    fn emitted(&self, _rec: &HitRecord) -> Color {
         Color::new(0.0, 0.0, 0.0)
     }
 }
@@ -132,11 +138,24 @@ impl Material for Dielectric {
 
 pub struct DiffuseLight {
     pub color: Color,
+    pub side: Side,
 }
 
 impl DiffuseLight {
-    pub fn new(color: Color) -> Arc<Self> {
-        Arc::new(Self { color })
+    pub fn new(color: Color) -> Self {
+        Self {
+            color,
+            side: Side::Double,
+        }
+    }
+
+    pub fn set_side(mut self, side: Side) -> Self {
+        self.side = side;
+        self
+    }
+
+    pub fn arc(self) -> Arc<Self> {
+        Arc::new(self)
     }
 }
 
@@ -151,8 +170,18 @@ impl Material for DiffuseLight {
         false
     }
 
-    fn emitted(&self, _u: f32, _v: f32, _p: &Point3) -> Color {
-        self.color
+    fn emitted(&self, rec: &HitRecord) -> Color {
+        let should_emit = match self.side {
+            Side::Front => rec.front_face,
+            Side::Back => !rec.front_face,
+            Side::Double => true,
+        };
+
+        if should_emit {
+            self.color
+        } else {
+            Color::new(0.0, 0.0, 0.0)
+        }
     }
 }
 
