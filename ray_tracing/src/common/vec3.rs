@@ -20,6 +20,10 @@ impl Vec3 {
         Self { x, y, z }
     }
 
+    pub fn zero() -> Self {
+        Self::new(0.0, 0.0, 0.0)
+    }
+
     pub fn from_array(array: &[f32], index: usize) -> Self {
         let x = array[index];
         let y = array[index + 1];

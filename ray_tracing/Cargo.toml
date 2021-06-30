@@ -27,11 +27,3 @@ path = "src/one_weekend.rs"
 [[bin]]
 name = "next_week"
 path = "src/next_week.rs"
-
-[[bin]]
-name = "next_week_cornell_box"
-path = "src/next_week_cornell_box.rs"
-
-[[bin]]
-name = "one_weekend_vk"
-path = "src/one_weekend_vk.rs"

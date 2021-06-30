@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::attribute::*;
 use super::bvh::*;
 use super::material::*;
 use super::triangle::*;

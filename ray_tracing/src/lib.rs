@@ -1,5 +1,7 @@
 pub mod common;
-pub mod renderer;
+pub mod cpu_renderer;
+pub mod gpu_renderer;
 
 pub use common::*;
-pub use renderer::*;
+pub use cpu_renderer::*;
+pub use gpu_renderer::*;

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use serde_json;
 
+use super::attribute::*;
 use super::bvh::*;
 use super::hittable::*;
 use super::material::*;

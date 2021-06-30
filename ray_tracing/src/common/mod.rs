@@ -1,4 +1,5 @@
 pub mod aabb;
+pub mod attribute;
 pub mod bvh;
 pub mod camera;
 pub mod helpers;
@@ -15,6 +16,7 @@ pub mod vec2;
 pub mod vec3;
 
 pub use aabb::*;
+pub use attribute::*;
 pub use bvh::*;
 pub use camera::*;
 pub use helpers::*;

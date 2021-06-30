@@ -1,7 +1,4 @@
-extern crate nalgebra as na;
-
 use image::{ImageBuffer, Rgb};
-use na::Vector3;
 use std::sync::Arc;
 use std::time::Instant;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
@@ -14,9 +11,20 @@ use vulkano::pipeline::ComputePipeline;
 use vulkano::sync;
 use vulkano::sync::GpuFuture;
 
-use ray_tracing::clamp;
+use crate::common::*;
 
-fn main() {
+pub struct GPURenderingParams {
+    pub acc: GPUAcceleratedStructure,
+    pub camera: Camera,
+    pub image_width: u32,
+    pub samples_per_pixel: u32,
+    pub max_depth: i32,
+    pub aspect_ratio: f32,
+    pub path: String,
+    pub background: Color,
+}
+
+pub fn render_world_gpu(_params: GPURenderingParams) {
     let image_width = 1920;
     let image_height = 1080;
 
@@ -27,9 +35,9 @@ fn main() {
         image_width,
         image_height,
         position: vec![Attribute {
-            a: Vector3::new(0.0, 0.0, -1.0),
-            b: Vector3::new(1.0, 0.0, -1.0),
-            c: Vector3::new(0.0, 1.0, -1.0),
+            a: Vec3::new(0.0, 0.0, -1.0),
+            b: Vec3::new(1.0, 0.0, -1.0),
+            c: Vec3::new(0.0, 1.0, -1.0),
         }],
     };
 
@@ -63,16 +71,10 @@ const BUFFER_USAGE: BufferUsage = BufferUsage {
 
 const GROUP_SIZE: u32 = 32;
 
-struct Attribute {
-    pub a: Vector3<f32>,
-    pub b: Vector3<f32>,
-    pub c: Vector3<f32>,
-}
-
 struct ComputeParams {
     image_width: u32,
     image_height: u32,
-    position: Vec<Attribute>,
+    position: Vec<Attribute<Vec3>>,
 }
 
 fn compute(params: ComputeParams) -> Vec<u8> {

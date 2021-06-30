@@ -14,6 +14,16 @@ pub enum Side {
     Double,
 }
 
+impl Side {
+    pub fn to_gpu_material_side(&self) -> GPUMaterialSide {
+        match self {
+            Self::Back => GPUMaterialSide::Back,
+            Self::Front => GPUMaterialSide::Front,
+            Self::Double => GPUMaterialSide::Double,
+        }
+    }
+}
+
 pub trait Material: Sync + Send {
     fn scatter(
         &self,
@@ -25,6 +35,10 @@ pub trait Material: Sync + Send {
 
     fn emitted(&self, _rec: &HitRecord) -> Color {
         Color::new(0.0, 0.0, 0.0)
+    }
+
+    fn bake_gpu_material(&self) -> GPUMaterial {
+        GPUMaterial::default()
     }
 }
 
@@ -55,6 +69,14 @@ impl Material for Lambertian {
         *scattered = Ray::new(rec.p, scatter_direction);
         *attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
         true
+    }
+
+    fn bake_gpu_material(&self) -> GPUMaterial {
+        GPUMaterial {
+            kind: GPUMaterialKind::Lambert,
+            color: self.albedo.value(0.0, 0.0, &Point3::zero()),
+            side: GPUMaterialSide::Double,
+        }
     }
 }
 
@@ -181,6 +203,14 @@ impl Material for DiffuseLight {
             self.color
         } else {
             Color::new(0.0, 0.0, 0.0)
+        }
+    }
+
+    fn bake_gpu_material(&self) -> GPUMaterial {
+        GPUMaterial {
+            kind: GPUMaterialKind::DiffuseLight,
+            color: self.color,
+            side: self.side.to_gpu_material_side(),
         }
     }
 }

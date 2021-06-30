@@ -86,6 +86,25 @@ impl Hittable for BVHNode {
 
         true
     }
+
+    fn feed_gpu_bvh(&self, acc: &mut GPUAcceleratedStructure) -> Option<usize> {
+        let left_index = self.left.feed_gpu_bvh(acc);
+        let right_index = self.right.feed_gpu_bvh(acc);
+
+        if left_index.is_some() && right_index.is_some() {
+            acc.bvh.push(GPUBvhNode {
+                aabb: self.aabb,
+                left: left_index.unwrap(),
+                right: right_index.unwrap(),
+                primitive: None,
+            });
+            let bvh_node_index = acc.bvh.len() - 1;
+
+            return Some(bvh_node_index);
+        }
+
+        return None;
+    }
 }
 
 fn box_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>, axis: usize) -> Ordering {

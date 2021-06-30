@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 use crate::common::*;
 
-pub struct RenderingParams<T: Hittable> {
+pub struct CPURenderingParams<T: Hittable> {
     pub world: T,
     pub camera: Camera,
     pub image_width: u32,
@@ -17,8 +17,8 @@ pub struct RenderingParams<T: Hittable> {
     pub background: Color,
 }
 
-pub fn render_world<T: Hittable>(params: RenderingParams<T>) {
-    let RenderingParams {
+pub fn render_world_cpu<T: Hittable>(params: CPURenderingParams<T>) {
+    let CPURenderingParams {
         world,
         camera,
         image_width,

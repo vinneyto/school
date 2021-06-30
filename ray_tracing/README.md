@@ -3,13 +3,14 @@
     cargo run --bin one_weekend --release
     cargo run --bin one_weekend --features="precise" --release
     
-    cargo run --bin one_weekend_vk --release
-
     cargo run --bin next_week --release
     cargo run --bin next_week --features="precise" --release
 
     cargo run --bin next_week --release -- cornell
     cargo run --bin next_week --features="precise" --release -- cornell
+
+    cargo run --bin next_week --release -- cornell-gpu
+    cargo run --bin next_week --features="precise" --release -- cornell-gpu
 
 # How to extreact data from three mesh
 

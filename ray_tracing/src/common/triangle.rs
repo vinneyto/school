@@ -1,23 +1,12 @@
 use std::sync::Arc;
 
 use super::aabb::*;
+use super::attribute::*;
 use super::hittable::*;
 use super::material::*;
 use super::ray::*;
 use super::vec2::*;
 use super::vec3::*;
-
-pub struct Attribute<T> {
-    pub a: T,
-    pub b: T,
-    pub c: T,
-}
-
-impl<T> Attribute<T> {
-    pub fn new(a: T, b: T, c: T) -> Self {
-        Attribute { a, b, c }
-    }
-}
 
 pub struct Triangle {
     pub position: Attribute<Vec3>,
@@ -116,5 +105,30 @@ impl Hittable for Triangle {
         *output_box = AABB::new(a.min(b).min(c), a.max(b).max(c));
 
         true
+    }
+
+    fn feed_gpu_bvh(&self, acc: &mut GPUAcceleratedStructure) -> Option<usize> {
+        acc.primitives.push(GPUPrimitive {
+            position: self.position,
+            normal: self.normal,
+            uv: self.uv,
+            material: self.material.bake_gpu_material(),
+        });
+
+        let primitive_index = acc.primitives.len() - 1;
+        let mut aabb = AABB::new(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+
+        self.bounding_box(0.0, f32::MAX, &mut aabb);
+
+        acc.bvh.push(GPUBvhNode {
+            aabb,
+            left: 0,
+            right: 0,
+            primitive: Some(primitive_index),
+        });
+
+        let bvh_node_index = acc.bvh.len() - 1;
+
+        Some(bvh_node_index)
     }
 }
