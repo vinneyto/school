@@ -5,13 +5,13 @@ use super::vec3::*;
 const DEG_TO_RAD: f32 = 0.017453292519943295769236907684886;
 
 pub struct Camera {
-    origin: Point3,
-    lower_left_corner: Point3,
-    horizontal: Vec3,
-    vertical: Vec3,
-    lens_radius: f32,
-    u: Vec3,
-    v: Vec3,
+    pub origin: Point3,
+    pub lower_left_corner: Point3,
+    pub horizontal: Vec3,
+    pub vertical: Vec3,
+    pub lens_radius: f32,
+    pub u: Vec3,
+    pub v: Vec3,
 }
 
 impl Camera {

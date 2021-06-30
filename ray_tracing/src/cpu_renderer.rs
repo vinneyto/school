@@ -29,7 +29,6 @@ pub fn render_world_cpu<T: Hittable>(params: CPURenderingParams<T>) {
         background,
     } = params;
 
-    // let aspect_ratio = 16.0 / 9.0;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     let now = Instant::now();

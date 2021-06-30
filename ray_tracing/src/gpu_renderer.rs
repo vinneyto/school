@@ -24,36 +24,6 @@ pub struct GPURenderingParams {
     pub background: Color,
 }
 
-pub fn render_world_gpu(_params: GPURenderingParams) {
-    let image_width = 1920;
-    let image_height = 1080;
-
-    let now = Instant::now();
-    println!("begin rendering...");
-
-    let params = ComputeParams {
-        image_width,
-        image_height,
-        position: vec![Attribute {
-            a: Vec3::new(0.0, 0.0, -1.0),
-            b: Vec3::new(1.0, 0.0, -1.0),
-            c: Vec3::new(0.0, 1.0, -1.0),
-        }],
-    };
-
-    let color_data = compute(params);
-
-    println!(
-        "rendered for {} s",
-        now.elapsed().as_millis() as f32 / 1000.0
-    );
-
-    let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
-        ImageBuffer::from_vec(image_width, image_height, color_data).unwrap();
-    let path = "one_weekend_vk.bmp";
-    img.save(path).unwrap();
-}
-
 const DEVICE_EXTENSIONS: DeviceExtensions = DeviceExtensions {
     khr_storage_buffer_storage_class: true,
     ..DeviceExtensions::none()
@@ -71,23 +41,69 @@ const BUFFER_USAGE: BufferUsage = BufferUsage {
 
 const GROUP_SIZE: u32 = 32;
 
-struct ComputeParams {
-    image_width: u32,
-    image_height: u32,
-    position: Vec<Attribute<Vec3>>,
-}
-
-fn compute(params: ComputeParams) -> Vec<u8> {
-    let ComputeParams {
+pub fn render_world_gpu(params: GPURenderingParams) {
+    let GPURenderingParams {
+        acc,
+        camera,
         image_width,
-        image_height,
-        position,
+        samples_per_pixel,
+        max_depth,
+        aspect_ratio,
+        path,
+        background,
     } = params;
+
+    let now = Instant::now();
+    println!("begin rendering...");
+
+    let image_height = (image_width as f32 / aspect_ratio) as u32;
+
+    let position = vec![Attribute {
+        a: Vec3::new(0.0, 0.0, 0.0),
+        b: Vec3::new(1.0, 0.0, 0.0),
+        c: Vec3::new(0.0, 1.0, 0.0),
+    }];
 
     // prepare data
 
     let pixels_count = image_width * image_height;
-    let uniforms = [image_width as f32, image_height as f32];
+    let uniforms = [
+        // image size
+        image_width as f32,
+        image_height as f32,
+        samples_per_pixel as f32,
+        max_depth as f32,
+        // camera
+        camera.origin.x,
+        camera.origin.y,
+        camera.origin.z,
+        0.0,
+        //
+        camera.lower_left_corner.x,
+        camera.lower_left_corner.y,
+        camera.lower_left_corner.z,
+        0.0,
+        //
+        camera.horizontal.x,
+        camera.horizontal.y,
+        camera.horizontal.z,
+        0.0,
+        //
+        camera.vertical.x,
+        camera.vertical.y,
+        camera.vertical.z,
+        0.0,
+        //
+        camera.u.x,
+        camera.u.y,
+        camera.u.z,
+        0.0,
+        //
+        camera.v.x,
+        camera.v.y,
+        camera.v.z,
+        camera.lens_radius,
+    ];
 
     // data
     let position_data = position
@@ -130,7 +146,7 @@ fn compute(params: ComputeParams) -> Vec<u8> {
         mod cs {
             vulkano_shaders::shader! {
                 ty: "compute",
-                path: "./src/shaders/one_weekend_vk.glsl"
+                path: "./src/shaders/one_weekend.glsl"
             }
         }
         let shader = cs::Shader::load(device.clone()).unwrap();
@@ -217,5 +233,14 @@ fn compute(params: ComputeParams) -> Vec<u8> {
         color_data.push((256.0 * clamp(b, 0.0, 0.999)) as u8);
     }
 
-    color_data
+    println!(
+        "rendered for {} s",
+        now.elapsed().as_millis() as f32 / 1000.0
+    );
+
+    println!("saving -> {}", path);
+
+    let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
+        ImageBuffer::from_vec(image_width, image_height, color_data).unwrap();
+    img.save(path).unwrap();
 }

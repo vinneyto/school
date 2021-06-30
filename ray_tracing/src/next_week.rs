@@ -101,7 +101,7 @@ fn main() {
             let look_at = Point3::new(1.0, 1.0, -3.0);
             let v_up = Point3::new(0.0, 1.0, 0.0);
             let dist_to_focus = 10.0;
-            let aperture = 0.0;
+            let aperture = 0.5;
             let background = Color::new(0.0, 0.0, 0.0);
 
             let world = cornell_box();
