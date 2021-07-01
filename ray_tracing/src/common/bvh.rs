@@ -18,13 +18,13 @@ impl BVHNode {
         let axis: usize = rand::thread_rng().gen_range(0..3);
 
         let size = objects.len();
-        let left;
-        let right;
+        let left: Arc<dyn Hittable>;
+        let right: Arc<dyn Hittable>;
 
         match size {
             1 => {
                 left = objects[0].clone();
-                right = objects[0].clone();
+                right = SkipGPUHittable::new(objects[0].clone());
             }
             2 => match box_compare(&objects[0], &objects[1], axis) {
                 Ordering::Greater => {

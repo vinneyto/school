@@ -12,16 +12,36 @@ struct Camera {
     float lens_radius;
 };
 
-struct AttributeData {
+struct Attribute3d {
     vec3 a;
     vec3 b;
     vec3 c;
 };
 
-struct triangle {
-   AttributeData position;
-   AttributeData normal;
-   AttributeData uv;
+struct Attribute2d {
+    vec2 a;
+    vec2 b;
+    vec2 c;
+};
+
+#define LAMBERTIAN 0
+#define DIFFUSE_LIGHT 1
+
+#define SIDE_FRONT 0
+#define SIDE_BACK 1
+#define SIDE_DOUBLE 2
+
+struct Material {
+    float kind;
+    float side;
+    vec3 color;
+};
+
+struct Triangle {
+    Attribute3d position;
+    Attribute3d normal;
+    Attribute2d uv;
+    Material material;
 };
 
 struct Ray {
@@ -30,9 +50,6 @@ struct Ray {
 };
 
 struct HitRecord {
-    Ray r;
-    float t_min;
-    float t_max;
     vec3 p;
     vec3 normal;
     float t;
@@ -60,25 +77,71 @@ layout(std140, set = 0, binding = 0) uniform Config {
     float samples_per_pixel; // 2
     float max_depth;         // 3
     Camera camera;           // 4
+    vec3 background;         // 4 + 24
 };
 
-layout(set = 0, binding = 1) buffer ColorBuffer {
+layout(std140, set = 0, binding = 1) buffer ColorBuffer {
     vec4 colorBuffer[];
 };
 
-layout(set = 0, binding = 2) buffer PositionBuffer {
-    AttributeData positionData[];
+layout(std140, set = 0, binding = 2) buffer PrimitiveBuffer {
+    Triangle triangles[];
+};
+
+layout(set = 0, binding = 3) buffer RandomBuffer {
+    float randomData[];
 };
 
 layout(constant_id = 0) const uint primitive_count = 0;
+layout(constant_id = 1) const uint random_count = 0;
 
 // functions
 
 float rand(vec2 co){
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+    float s = sin(dot(co, vec2(23.98123, 76.3849)));
+    uint i = uint((s < 0.0 ? s + 1.0 : s) * 10000000.0);
+    i = i % random_count;
+    return randomData[i];
 }
 
-bool hit_triangle(in triangle tr, in out HitRecord rec) {
+
+float random_in_range(vec2 co, float from, float to) {
+    return from + (to - from) * rand(co); 
+}
+
+vec3 random_in_unit_disc(vec2 co) {
+    vec3 p = vec3(0);
+    for (int i = 0; i < 100; i++) {
+        float r1 = random_in_range(vec2(co), -1.0, 1.0);
+        float r2 = random_in_range(vec2(r1), -1.0, 1.0);
+        p = vec3(r1, r2, 0.0);
+        if (length(p) < 1.0) {
+            return p;
+        }
+    }
+    return normalize(p);
+}
+
+vec3 random_in_unit_sphere(vec2 co) {
+    vec3 p = vec3(0);
+    for (int i = 0; i < 100; i++) {
+        float r1 = random_in_range(vec2(co), -1.0, 1.0);
+        float r2 = random_in_range(vec2(r1), -1.0, 1.0);
+        float r3 = random_in_range(vec2(r2), -1.0, 1.0);
+        p = vec3(r1, r2, r3);
+        if (length(p) < 1.0) {
+            return p;
+        }
+    }
+    return normalize(p);
+}
+
+bool near_zero(vec3 v) {
+    float s = 1e-8;
+    return abs(v.x) < s && abs(v.y)  < s && abs(v.z) < s;
+}
+
+bool hit_triangle(in Triangle tr, Ray r, float t_min, float t_max, in out HitRecord rec) {
     vec3 a = tr.position.a;
     vec3 b = tr.position.b;
     vec3 c = tr.position.c;
@@ -87,11 +150,9 @@ bool hit_triangle(in triangle tr, in out HitRecord rec) {
     vec3 nb = tr.normal.b;
     vec3 nc = tr.normal.c;
 
-    vec2 ta = tr.uv.a.xy;
-    vec2 tb = tr.uv.b.xy;
-    vec2 tc = tr.uv.c.xy;
-
-    Ray r = rec.r;
+    vec2 ta = tr.uv.a;
+    vec2 tb = tr.uv.b;
+    vec2 tc = tr.uv.c;
 
     vec3 e1 = b - a;
     vec3 e2 = c - a;
@@ -108,7 +169,7 @@ bool hit_triangle(in triangle tr, in out HitRecord rec) {
     vec3 y = cross(s, e1);
     float t = f * dot(e2, y);
 
-    if (t < rec.t_min || rec.t_max < t) {
+    if (t < t_min || t_max < t) {
         return false;
     }
 
@@ -133,51 +194,111 @@ bool hit_triangle(in triangle tr, in out HitRecord rec) {
     vec2 uv = ta * w + tb * u + tc * v;
     rec.u = uv.x;
     rec.v = uv.y;
-    // rec.material = Some(self.material.clone());
-    // rec.override_color = None;
 
     return true;
 }
 
+bool material_scatter(in Material material, Ray r, in out HitRecord rec, out vec3 attenuation, out Ray scattered) {
+    if (int(material.kind) == LAMBERTIAN) {
+        vec3 scatter_direction = rec.normal + normalize(random_in_unit_sphere(r.dir.xy));
+
+        if (near_zero(scatter_direction)) {
+            scatter_direction = rec.normal;
+        }
+
+        scattered = Ray(rec.p, scatter_direction);
+        attenuation = material.color;
+        return true;
+    }
+
+    return false;
+}
+
+vec3 material_emit(in Material material, in HitRecord rec) {
+    if (int(material.kind) == DIFFUSE_LIGHT) {
+        bool should_emit = false;
+        switch (int(material.side)) {
+            case SIDE_FRONT:
+                should_emit = rec.front_face;
+                break;
+            case SIDE_BACK:
+                should_emit = !rec.front_face;
+                break;
+            case SIDE_DOUBLE:
+                should_emit = true;
+                break;
+        }
+
+        if (should_emit) {
+            return material.color;
+        }
+    }
+
+    return vec3(0.0, 0.0, 0.0);
+}
+
 vec3 ray_color(in Ray r) {
-    for (int i = 0; i < primitive_count; i++) {
-        AttributeData position = positionData[i];
-        AttributeData normal = AttributeData(vec3(0), vec3(0), vec3(0));
-        AttributeData uv = AttributeData(vec3(0), vec3(0), vec3(0));
+    Ray current_ray = r;
+    vec3 current_attenuation = vec3(1.0, 1.0, 1.0);
+    float depth = max_depth;
 
-        triangle tr = triangle(position, normal, uv);
+    while (depth > 0.0) {
+        bool has_collision = false;
+        bool has_scatter = false;
+        vec3 attenuation = vec3(0);
+        vec3 emitted = vec3(0);
+        Ray scattered = Ray(vec3(0), vec3(0));
+        HitRecord rec = HitRecord(
+            vec3(0),
+            vec3(0),
+            0.0,
+            0.0,
+            0.0,
+            false
+        );
 
-        HitRecord rec;
+        float t_min = 0.001;
+        float t_max = 1000000.0;
 
-        rec.r = r;
-        rec.t_min = 0.0;
-        rec.t_max = 1000.0;
+        // find first collided object
+        for (int i = 0; i < primitive_count; i++) {
+            Triangle triangle = triangles[i];
 
-        if (hit_triangle(tr, rec)) {
-            return vec3(1.0, 0.0, 0.0);
+            if (hit_triangle(triangle, current_ray, t_min, t_max, rec)) {
+                has_collision = true;
+                has_scatter = material_scatter(
+                    triangle.material,
+                    current_ray,
+                    rec,
+                    attenuation,
+                    scattered
+                );
+                emitted = material_emit(
+                    triangle.material,
+                    rec
+                );
+                current_ray = scattered;
+                t_max = rec.t;
+                break;
+            }
+        }
+
+        // process scattered ray
+        if (has_collision) {
+            depth -= 1.0;
+
+            if (!has_scatter) {
+                return current_attenuation * emitted;
+            } else {
+                current_attenuation = (current_attenuation * attenuation) + emitted;
+            }
+        } else {
+            return current_attenuation * background;
         }
     }
 
-    vec3 unit_direction = normalize(r.dir);
-    float t = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
-}
-
-float random_in_range(vec2 co, float from, float to) {
-    return from + (to - from) * rand(co); 
-}
-
-vec3 random_in_unit_disc(vec2 co) {
-    vec3 p = vec3(0);
-    for (int i = 0; i < 10; i++) {
-        float r1 = random_in_range(vec2(co), -1.0, 1.0);
-        float r2 = random_in_range(vec2(r1), -1.0, 1.0);
-        p = vec3(r1, r2, 0.0);
-        if (length(p) < 1.0) {
-            return p;
-        }
-    }
-    return p;
+    // maximim depth
+    return vec3(0.0, 0.0, 0.0);
 }
 
 Ray camera_get_ray(vec2 st) {
@@ -221,6 +342,13 @@ void main() {
     }
 
     pixel_color /= float(samples_per_pixel);
+
+    // float u = (float(x)) / (image_width - 1);
+    // float vv = (float(y)) / (image_height - 1);
+    // float v = 1.0 - vv;
+
+    // vec2 uv = vec2(u, v);
+    // Ray ray = camera_get_ray(uv);
 
     colorBuffer[idx] = vec4(pixel_color, 1.0);
 }

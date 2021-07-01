@@ -42,11 +42,30 @@ pub enum GPUMaterialKind {
     DiffuseLight,
 }
 
+impl GPUMaterialKind {
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            Self::Lambert => 0.0,
+            Self::DiffuseLight => 1.0,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum GPUMaterialSide {
     Front,
     Back,
     Double,
+}
+
+impl GPUMaterialSide {
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            Self::Front => 0.0,
+            Self::Back => 1.0,
+            Self::Double => 2.0,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -91,6 +110,30 @@ pub struct GPUAcceleratedStructure {
 pub trait Hittable: Sync + Send {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
     fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool;
+    fn feed_gpu_bvh(&self, _acc: &mut GPUAcceleratedStructure) -> Option<usize> {
+        None
+    }
+}
+
+pub struct SkipGPUHittable {
+    master: Arc<dyn Hittable>,
+}
+
+impl SkipGPUHittable {
+    pub fn new(master: Arc<dyn Hittable>) -> Arc<Self> {
+        Arc::new(SkipGPUHittable { master })
+    }
+}
+
+impl Hittable for SkipGPUHittable {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+        self.master.hit(ray, t_min, t_max, record)
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32, output_box: &mut AABB) -> bool {
+        self.master.bounding_box(time0, time1, output_box)
+    }
+
     fn feed_gpu_bvh(&self, _acc: &mut GPUAcceleratedStructure) -> Option<usize> {
         None
     }

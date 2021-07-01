@@ -49,7 +49,6 @@ fn main() {
 
             world.feed_gpu_bvh(&mut acc);
 
-            println!("{:#?}", acc.primitives);
             println!("rendering -> cornell");
 
             let params = CPURenderingParams {
@@ -101,7 +100,7 @@ fn main() {
             let look_at = Point3::new(1.0, 1.0, -3.0);
             let v_up = Point3::new(0.0, 1.0, 0.0);
             let dist_to_focus = 10.0;
-            let aperture = 0.5;
+            let aperture = 0.0;
             let background = Color::new(0.0, 0.0, 0.0);
 
             let world = cornell_box();
@@ -109,7 +108,7 @@ fn main() {
 
             world.feed_gpu_bvh(&mut acc);
 
-            println!("{:#?}", acc.primitives);
+            // println!("{:#?}", acc.primitives);
             println!("rendering -> cornell-gpu");
 
             let params = GPURenderingParams {

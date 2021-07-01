@@ -41,6 +41,8 @@ const BUFFER_USAGE: BufferUsage = BufferUsage {
 
 const GROUP_SIZE: u32 = 32;
 
+const RANDOM_DATA_SIZE: u32 = 512 * 512;
+
 pub fn render_world_gpu(params: GPURenderingParams) {
     let GPURenderingParams {
         acc,
@@ -57,12 +59,6 @@ pub fn render_world_gpu(params: GPURenderingParams) {
     println!("begin rendering...");
 
     let image_height = (image_width as f32 / aspect_ratio) as u32;
-
-    let position = vec![Attribute {
-        a: Vec3::new(0.0, 0.0, 0.0),
-        b: Vec3::new(1.0, 0.0, 0.0),
-        c: Vec3::new(0.0, 1.0, 0.0),
-    }];
 
     // prepare data
 
@@ -103,20 +99,43 @@ pub fn render_world_gpu(params: GPURenderingParams) {
         camera.v.y,
         camera.v.z,
         camera.lens_radius,
+        // background
+        background.x,
+        background.y,
+        background.z,
+        0.0,
     ];
 
     // data
-    let position_data = position
-        .iter()
-        .map(|p| {
-            vec![
-                p.a.x, p.a.y, p.a.z, 0.0, //
-                p.b.x, p.b.y, p.b.z, 0.0, //
-                p.c.x, p.c.y, p.c.z, 0.0,
-            ]
-        })
-        .flatten()
-        .collect::<Vec<f32>>();
+    let mut primitives_data: Vec<f32> = vec![];
+
+    for primitive in &acc.primitives {
+        // position
+        std140_insert_vec3(&mut primitives_data, primitive.position.a); // 4
+        std140_insert_vec3(&mut primitives_data, primitive.position.b); // 8
+        std140_insert_vec3(&mut primitives_data, primitive.position.c); // 12
+                                                                        // normal
+        std140_insert_vec3(&mut primitives_data, primitive.normal.a); // 4
+        std140_insert_vec3(&mut primitives_data, primitive.normal.b); // 8
+        std140_insert_vec3(&mut primitives_data, primitive.normal.c); // 12
+                                                                      // uv
+        std140_insert_vec2(&mut primitives_data, primitive.uv.a); // 2
+        std140_insert_vec2(&mut primitives_data, primitive.uv.b); // 4
+        std140_insert_vec2(&mut primitives_data, primitive.uv.c); // 6
+        primitives_data.push(0.0); // 7
+        primitives_data.push(0.0); // 8
+                                   // material
+        primitives_data.push(primitive.material.kind.to_f32()); // 1
+        primitives_data.push(primitive.material.side.to_f32()); // 2
+        primitives_data.push(0.0); // 3
+        primitives_data.push(0.0); // 4
+        std140_insert_vec3(&mut primitives_data, primitive.material.color);
+    }
+
+    let random_data: Vec<f32> = (0..RANDOM_DATA_SIZE).map(|_| random_f32()).collect();
+
+    println!("{:#?}", acc.primitives.len());
+    // println!("{:#?}", primitives_data);
 
     // configure Vulkan
 
@@ -151,7 +170,8 @@ pub fn render_world_gpu(params: GPURenderingParams) {
         }
         let shader = cs::Shader::load(device.clone()).unwrap();
         let spec_const = cs::SpecializationConstants {
-            primitive_count: position.len() as u32,
+            primitive_count: acc.primitives.len() as u32,
+            random_count: RANDOM_DATA_SIZE,
         };
         ComputePipeline::new(
             device.clone(),
@@ -176,7 +196,12 @@ pub fn render_world_gpu(params: GPURenderingParams) {
     };
 
     let primitives_buffer = {
-        let data_iter = position_data.iter().map(|x| *x);
+        let data_iter = primitives_data.iter().map(|x| *x);
+        CpuAccessibleBuffer::from_iter(device.clone(), BUFFER_USAGE, false, data_iter).unwrap()
+    };
+
+    let random_buffer = {
+        let data_iter = random_data.iter().map(|x| *x);
         CpuAccessibleBuffer::from_iter(device.clone(), BUFFER_USAGE, false, data_iter).unwrap()
     };
 
@@ -190,6 +215,8 @@ pub fn render_world_gpu(params: GPURenderingParams) {
             .add_buffer(color_buffer.clone())
             .unwrap()
             .add_buffer(primitives_buffer.clone())
+            .unwrap()
+            .add_buffer(random_buffer.clone())
             .unwrap()
             .build()
             .unwrap(),
@@ -243,4 +270,16 @@ pub fn render_world_gpu(params: GPURenderingParams) {
     let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
         ImageBuffer::from_vec(image_width, image_height, color_data).unwrap();
     img.save(path).unwrap();
+}
+
+fn std140_insert_vec2(data: &mut Vec<f32>, v: Vec2) {
+    data.push(v.x);
+    data.push(v.y);
+}
+
+fn std140_insert_vec3(data: &mut Vec<f32>, v: Vec3) {
+    data.push(v.x);
+    data.push(v.y);
+    data.push(v.z);
+    data.push(0.0);
 }
