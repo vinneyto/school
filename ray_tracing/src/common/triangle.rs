@@ -106,29 +106,4 @@ impl Hittable for Triangle {
 
         true
     }
-
-    fn feed_gpu_bvh(&self, acc: &mut GPUAcceleratedStructure) -> Option<usize> {
-        acc.primitives.push(GPUPrimitive {
-            position: self.position,
-            normal: self.normal,
-            uv: self.uv,
-            material: self.material.bake_gpu_material(),
-        });
-
-        let primitive_index = acc.primitives.len() - 1;
-        let mut aabb = AABB::new(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
-
-        self.bounding_box(0.0, f32::MAX, &mut aabb);
-
-        acc.bvh.push(GPUBvhNode {
-            aabb,
-            left: 0,
-            right: 0,
-            primitive: Some(primitive_index),
-        });
-
-        let bvh_node_index = acc.bvh.len() - 1;
-
-        Some(bvh_node_index)
-    }
 }

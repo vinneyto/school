@@ -18,13 +18,13 @@ impl BVHNode {
         let axis: usize = rand::thread_rng().gen_range(0..3);
 
         let size = objects.len();
-        let left: Arc<dyn Hittable>;
-        let right: Arc<dyn Hittable>;
+        let left;
+        let right;
 
         match size {
             1 => {
                 left = objects[0].clone();
-                right = SkipGPUHittable::new(objects[0].clone());
+                right = objects[0].clone();
             }
             2 => match box_compare(&objects[0], &objects[1], axis) {
                 Ordering::Greater => {
@@ -85,25 +85,6 @@ impl Hittable for BVHNode {
         *output_box = self.aabb;
 
         true
-    }
-
-    fn feed_gpu_bvh(&self, acc: &mut GPUAcceleratedStructure) -> Option<usize> {
-        let left_index = self.left.feed_gpu_bvh(acc);
-        let right_index = self.right.feed_gpu_bvh(acc);
-
-        if left_index.is_some() && right_index.is_some() {
-            acc.bvh.push(GPUBvhNode {
-                aabb: self.aabb,
-                left: left_index.unwrap(),
-                right: right_index.unwrap(),
-                primitive: None,
-            });
-            let bvh_node_index = acc.bvh.len() - 1;
-
-            return Some(bvh_node_index);
-        }
-
-        return None;
     }
 }
 

@@ -45,9 +45,6 @@ fn main() {
             let background = Color::new(0.0, 0.0, 0.0);
 
             let world = cornell_box();
-            let mut acc = GPUAcceleratedStructure::default();
-
-            world.feed_gpu_bvh(&mut acc);
 
             println!("rendering -> cornell");
 
@@ -71,66 +68,6 @@ fn main() {
             };
 
             render_world_cpu(params);
-        }
-        "cornell-gpu" => {
-            //fast
-            #[cfg(not(feature = "precise"))]
-            let image_width = 600;
-            #[cfg(not(feature = "precise"))]
-            let samples_per_pixel = 200;
-            #[cfg(not(feature = "precise"))]
-            let max_depth = 30;
-
-            // precise
-            #[cfg(feature = "precise")]
-            let image_width = 1920;
-            #[cfg(feature = "precise")]
-            let samples_per_pixel = 2000;
-            #[cfg(feature = "precise")]
-            let max_depth = 100;
-            let aspect_ratio = 1.0;
-
-            #[cfg(not(feature = "precise"))]
-            let path = "next_week_cornell_gpu.bmp";
-
-            #[cfg(feature = "precise")]
-            let path = "next_week_cornell_gpu_precise.bmp";
-
-            let look_from = Point3::new(1.0, 1.0, 8.0);
-            let look_at = Point3::new(1.0, 1.0, -3.0);
-            let v_up = Point3::new(0.0, 1.0, 0.0);
-            let dist_to_focus = 10.0;
-            let aperture = 0.0;
-            let background = Color::new(0.0, 0.0, 0.0);
-
-            let world = cornell_box();
-            let mut acc = GPUAcceleratedStructure::default();
-
-            world.feed_gpu_bvh(&mut acc);
-
-            // println!("{:#?}", acc.primitives);
-            println!("rendering -> cornell-gpu");
-
-            let params = GPURenderingParams {
-                acc,
-                camera: Camera::new(
-                    look_from,
-                    look_at,
-                    v_up,
-                    20.0,
-                    aspect_ratio,
-                    aperture,
-                    dist_to_focus,
-                ),
-                image_width,
-                samples_per_pixel,
-                max_depth,
-                aspect_ratio,
-                background,
-                path: String::from(path),
-            };
-
-            render_world_gpu(params);
         }
         "default" => {
             //fast
@@ -294,11 +231,18 @@ fn cornell_box() -> BVHNode {
 
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
 
+    // let dm = DebugMaterial::new(DebugTarget::Face).arc();
+    // objects.push(yz_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
+    // objects.push(yz_rect(2.0, 0.0, 0.0, 2.0, 2.0, dm.clone()));
+    // objects.push(xz_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
+    // objects.push(xz_rect(2.0, 0.0, 0.0, 2.0, 2.0, dm.clone()));
+    // objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
+
     objects.push(yz_rect(0.0, 2.0, 0.0, 2.0, 0.0, green));
-    objects.push(yz_rect(0.0, 2.0, 0.0, 2.0, 2.0, red));
+    objects.push(yz_rect(2.0, 0.0, 0.0, 2.0, 2.0, red));
     objects.push(xz_rect(0.8, 1.2, 0.8, 1.2, 1.99, light.clone()));
     objects.push(xz_rect(0.0, 2.0, 0.0, 2.0, 0.0, white.clone()));
-    objects.push(xz_rect(0.0, 2.0, 0.0, 2.0, 2.0, white.clone()));
+    objects.push(xz_rect(2.0, 0.0, 0.0, 2.0, 2.0, white.clone()));
     objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, white.clone()));
 
     BVHNode::new(&objects, 0.0, f32::MAX)

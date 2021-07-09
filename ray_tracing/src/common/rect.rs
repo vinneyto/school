@@ -15,14 +15,13 @@ pub fn xy_rect(
     k: f32,
     material: Arc<dyn Material>,
 ) -> Arc<BVHNode> {
-    let normal = Vec3::new(0.0, 0.0, 1.0);
+    let a = Point3::new(x0, y0, k);
+    let b = Point3::new(x1, y1, k);
+    let c = Point3::new(x0, y1, k);
+    let normal = (b - a).cross(c - a).unit_vector();
 
     let t1 = Triangle::new(
-        Attribute {
-            a: Point3::new(x0, y0, k),
-            b: Point3::new(x1, y1, k),
-            c: Point3::new(x0, y1, k),
-        },
+        Attribute { a, b, c },
         Attribute {
             a: normal,
             b: normal,
@@ -66,14 +65,13 @@ pub fn yz_rect(
     k: f32,
     material: Arc<dyn Material>,
 ) -> Arc<BVHNode> {
-    let normal = Vec3::new(1.0, 0.0, 0.0);
+    let a = Point3::new(k, y0, z0);
+    let b = Point3::new(k, y1, z0);
+    let c = Point3::new(k, y1, z1);
+    let normal = (b - a).cross(c - a).unit_vector();
 
     let t1 = Triangle::new(
-        Attribute {
-            a: Point3::new(k, y0, z0),
-            b: Point3::new(k, y1, z0),
-            c: Point3::new(k, y1, z1),
-        },
+        Attribute { a, b, c },
         Attribute {
             a: normal,
             b: normal,
@@ -117,14 +115,13 @@ pub fn xz_rect(
     k: f32,
     material: Arc<dyn Material>,
 ) -> Arc<BVHNode> {
-    let normal = Vec3::new(0.0, 1.0, 0.0);
+    let a = Point3::new(x0, k, z0);
+    let b = Point3::new(x0, k, z1);
+    let c = Point3::new(x1, k, z1);
+    let normal = (b - a).cross(c - a).unit_vector();
 
     let t1 = Triangle::new(
-        Attribute {
-            a: Point3::new(x0, k, z0),
-            b: Point3::new(x0, k, z1),
-            c: Point3::new(x1, k, z1),
-        },
+        Attribute { a, b, c },
         Attribute {
             a: normal,
             b: normal,
