@@ -100,3 +100,166 @@ pub fn bake_monkey_mesh(material: Arc<dyn Material>) -> Arc<dyn Hittable> {
 
     Arc::new(BVHNode::new(&trinagles, 0.0, f32::MAX))
 }
+
+pub fn xy_rect(
+    x0: f32,
+    x1: f32,
+    y0: f32,
+    y1: f32,
+    k: f32,
+    material: Arc<dyn Material>,
+) -> Arc<BVHNode> {
+    let a = Point3::new(x0, y0, k);
+    let b = Point3::new(x1, y1, k);
+    let c = Point3::new(x0, y1, k);
+    let normal = (b - a).cross(c - a).unit_vector();
+
+    let t1 = Triangle::new(
+        Attribute { a, b, c },
+        Attribute {
+            a: normal,
+            b: normal,
+            c: normal,
+        },
+        Attribute {
+            a: Vec2::new(0.0, 0.0),
+            b: Vec2::new(1.0, 1.0),
+            c: Vec2::new(0.0, 1.0),
+        },
+        material.clone(),
+    );
+
+    let t2 = Triangle::new(
+        Attribute {
+            a: Point3::new(x0, y0, k),
+            b: Point3::new(x1, y0, k),
+            c: Point3::new(x1, y1, k),
+        },
+        Attribute {
+            a: normal,
+            b: normal,
+            c: normal,
+        },
+        Attribute {
+            a: Vec2::new(0.0, 0.0),
+            b: Vec2::new(1.0, 0.0),
+            c: Vec2::new(1.0, 1.0),
+        },
+        material.clone(),
+    );
+
+    Arc::new(BVHNode::new(&[t1, t2], 0.0, f32::MAX))
+}
+
+pub fn yz_rect(
+    y0: f32,
+    y1: f32,
+    z0: f32,
+    z1: f32,
+    k: f32,
+    material: Arc<dyn Material>,
+) -> Arc<BVHNode> {
+    let a = Point3::new(k, y0, z0);
+    let b = Point3::new(k, y1, z0);
+    let c = Point3::new(k, y1, z1);
+    let normal = (b - a).cross(c - a).unit_vector();
+
+    let t1 = Triangle::new(
+        Attribute { a, b, c },
+        Attribute {
+            a: normal,
+            b: normal,
+            c: normal,
+        },
+        Attribute {
+            a: Vec2::new(0.0, 0.0),
+            b: Vec2::new(0.0, 1.0),
+            c: Vec2::new(1.0, 1.0),
+        },
+        material.clone(),
+    );
+
+    let t2 = Triangle::new(
+        Attribute {
+            a: Point3::new(k, y0, z0),
+            b: Point3::new(k, y1, z1),
+            c: Point3::new(k, y0, z1),
+        },
+        Attribute {
+            a: normal,
+            b: normal,
+            c: normal,
+        },
+        Attribute {
+            a: Vec2::new(0.0, 0.0),
+            b: Vec2::new(1.0, 1.0),
+            c: Vec2::new(1.0, 0.0),
+        },
+        material.clone(),
+    );
+
+    Arc::new(BVHNode::new(&[t1, t2], 0.0, f32::MAX))
+}
+
+pub fn xz_rect(
+    x0: f32,
+    x1: f32,
+    z0: f32,
+    z1: f32,
+    k: f32,
+    material: Arc<dyn Material>,
+) -> Arc<BVHNode> {
+    let a = Point3::new(x0, k, z0);
+    let b = Point3::new(x0, k, z1);
+    let c = Point3::new(x1, k, z1);
+    let normal = (b - a).cross(c - a).unit_vector();
+
+    let t1 = Triangle::new(
+        Attribute { a, b, c },
+        Attribute {
+            a: normal,
+            b: normal,
+            c: normal,
+        },
+        Attribute {
+            a: Vec2::new(0.0, 0.0),
+            b: Vec2::new(1.0, 1.0),
+            c: Vec2::new(0.0, 1.0),
+        },
+        material.clone(),
+    );
+
+    let t2 = Triangle::new(
+        Attribute {
+            a: Point3::new(x0, k, z0),
+            b: Point3::new(x1, k, z1),
+            c: Point3::new(x1, k, z0),
+        },
+        Attribute {
+            a: normal,
+            b: normal,
+            c: normal,
+        },
+        Attribute {
+            a: Vec2::new(0.0, 0.0),
+            b: Vec2::new(1.0, 0.0),
+            c: Vec2::new(1.0, 1.0),
+        },
+        material.clone(),
+    );
+
+    Arc::new(BVHNode::new(&[t1, t2], 0.0, f32::MAX))
+}
+
+pub fn bake_box(p0: Vec3, p1: Vec3, material: Arc<dyn Material>) -> Arc<dyn Hittable> {
+    let sides: Vec<Arc<dyn Hittable>> = vec![
+        xy_rect(p0.x, p1.x, p0.y, p1.y, p1.z, material.clone()),
+        xy_rect(p1.x, p0.x, p0.y, p1.y, p0.z, material.clone()),
+        xz_rect(p0.x, p1.x, p0.z, p1.z, p1.y, material.clone()),
+        xz_rect(p1.x, p0.x, p0.z, p1.z, p0.y, material.clone()),
+        yz_rect(p0.y, p1.y, p0.z, p1.z, p1.x, material.clone()),
+        yz_rect(p1.y, p0.y, p0.z, p1.z, p0.x, material.clone()),
+    ];
+
+    Arc::new(BVHNode::new(&sides, 0.0, f32::MAX))
+}

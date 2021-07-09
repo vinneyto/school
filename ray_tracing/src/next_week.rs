@@ -16,7 +16,7 @@ fn main() {
         "cornell" => {
             //fast
             #[cfg(not(feature = "precise"))]
-            let image_width = 600;
+            let image_width = 400;
             #[cfg(not(feature = "precise"))]
             let samples_per_pixel = 200;
             #[cfg(not(feature = "precise"))]
@@ -231,6 +231,13 @@ fn cornell_box() -> BVHNode {
 
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
 
+    objects.push(yz_rect(0.0, 2.0, 0.0, 2.0, 0.0, green));
+    objects.push(yz_rect(2.0, 0.0, 0.0, 2.0, 2.0, red));
+    objects.push(xz_rect(0.8, 1.2, 0.8, 1.2, 1.99, light.clone()));
+    objects.push(xz_rect(0.0, 2.0, 0.0, 2.0, 0.0, white.clone()));
+    objects.push(xz_rect(2.0, 0.0, 0.0, 2.0, 2.0, white.clone()));
+    objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, white.clone()));
+
     // let dm = DebugMaterial::new(DebugTarget::Face).arc();
     // objects.push(yz_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
     // objects.push(yz_rect(2.0, 0.0, 0.0, 2.0, 2.0, dm.clone()));
@@ -238,12 +245,17 @@ fn cornell_box() -> BVHNode {
     // objects.push(xz_rect(2.0, 0.0, 0.0, 2.0, 2.0, dm.clone()));
     // objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
 
-    objects.push(yz_rect(0.0, 2.0, 0.0, 2.0, 0.0, green));
-    objects.push(yz_rect(2.0, 0.0, 0.0, 2.0, 2.0, red));
-    objects.push(xz_rect(0.8, 1.2, 0.8, 1.2, 1.99, light.clone()));
-    objects.push(xz_rect(0.0, 2.0, 0.0, 2.0, 0.0, white.clone()));
-    objects.push(xz_rect(2.0, 0.0, 0.0, 2.0, 2.0, white.clone()));
-    objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, white.clone()));
+    objects.push(bake_box(
+        Vec3::new(0.0 + 0.3, 0.0, 0.0 + 1.0),
+        Vec3::new(0.5 + 0.3, 1.0, 0.5 + 0.3),
+        white.clone(),
+    ));
+
+    objects.push(bake_box(
+        Vec3::new(0.0 + 1.0, 0.0, 0.0 + 1.0),
+        Vec3::new(0.5 + 1.0, 0.5, 0.5 + 1.0),
+        white.clone(),
+    ));
 
     BVHNode::new(&objects, 0.0, f32::MAX)
 }
