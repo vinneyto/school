@@ -246,14 +246,14 @@ fn cornell_box() -> BVHNode {
     // objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
 
     objects.push(bake_box(
-        Vec3::new(0.0 + 0.3, 0.0, 0.0 + 1.0),
-        Vec3::new(0.5 + 0.3, 1.0, 0.5 + 0.3),
+        Vec3::new(0.0 + 0.3, 0.0, 0.0 + 0.3),
+        Vec3::new(0.6 + 0.3, 1.2, 0.6 + 0.3),
         white.clone(),
     ));
 
     objects.push(bake_box(
         Vec3::new(0.0 + 1.0, 0.0, 0.0 + 1.0),
-        Vec3::new(0.5 + 1.0, 0.5, 0.5 + 1.0),
+        Vec3::new(0.6 + 1.0, 0.6, 0.6 + 1.0),
         white.clone(),
     ));
 
