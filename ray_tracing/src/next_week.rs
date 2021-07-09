@@ -26,7 +26,7 @@ fn main() {
             #[cfg(feature = "precise")]
             let image_width = 1920;
             #[cfg(feature = "precise")]
-            let samples_per_pixel = 2000;
+            let samples_per_pixel = 10000;
             #[cfg(feature = "precise")]
             let max_depth = 100;
             let aspect_ratio = 1.0;
