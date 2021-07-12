@@ -169,6 +169,17 @@ impl ops::Index<usize> for Vec3 {
     }
 }
 
+impl ops::IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+        match i {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("unknown vector component index"),
+        }
+    }
+}
+
 impl Vec3 {
     pub fn dot(self, other: Self) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z

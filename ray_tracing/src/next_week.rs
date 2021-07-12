@@ -245,17 +245,25 @@ fn cornell_box() -> BVHNode {
     // objects.push(xz_rect(2.0, 0.0, 0.0, 2.0, 2.0, dm.clone()));
     // objects.push(xy_rect(0.0, 2.0, 0.0, 2.0, 0.0, dm.clone()));
 
-    objects.push(bake_box(
-        Vec3::new(0.0 + 0.3, 0.0, 0.0 + 0.3),
-        Vec3::new(0.6 + 0.3, 1.2, 0.6 + 0.3),
+    let mut box1: Arc<dyn Hittable>;
+    box1 = bake_box(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.6, 1.2, 0.6),
         white.clone(),
-    ));
+    );
+    box1 = RotateY::new(box1, 15.0).arc();
+    box1 = Translate::new(box1, Vec3::new(0.3, 0.0, 0.5)).arc();
+    objects.push(box1);
 
-    objects.push(bake_box(
-        Vec3::new(0.0 + 1.0, 0.0, 0.0 + 1.0),
-        Vec3::new(0.6 + 1.0, 0.6, 0.6 + 1.0),
+    let mut box2: Arc<dyn Hittable>;
+    box2 = bake_box(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.6, 0.6, 0.6),
         white.clone(),
-    ));
+    );
+    box2 = RotateY::new(box2, -18.0).arc();
+    box2 = Translate::new(box2, Vec3::new(1.1, 0.0, 0.9)).arc();
+    objects.push(box2);
 
     BVHNode::new(&objects, 0.0, f32::MAX)
 }
