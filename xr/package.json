@@ -1,0 +1,53 @@
+{
+  "name": "xr",
+  "version": "0.0.1",
+  "repository": "git@github.com:vinneyto/school.git",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build": "cross-env NODE_ENV=production webpack",
+    "start": "webpack serve",
+    "lint": "yarn eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "fix": "yarn lint && pretty-quick"
+  },
+  "dependencies": {
+    "@types/compression-webpack-plugin": "6.0.6",
+    "@types/friendly-errors-webpack-plugin": "0.1.4",
+    "@types/node": "14.14.8",
+    "@types/three": "^0.131.0",
+    "@types/webxr": "^0.2.3",
+    "@typescript-eslint/eslint-plugin": "4.8.1",
+    "@typescript-eslint/parser": "4.8.1",
+    "clean-webpack-plugin": "3.0.0",
+    "compression-webpack-plugin": "6.1.1",
+    "cross-env": "7.0.2",
+    "eslint": "7.14.0",
+    "eslint-config-prettier": "^6.15.0",
+    "file-loader": "6.2.0",
+    "friendly-errors-webpack-plugin": "1.7.0",
+    "gltf-webpack-loader": "1.0.6",
+    "html-webpack-plugin": "4.5.0",
+    "husky": "4.3.0",
+    "jss": "10.5.0",
+    "jss-preset-default": "10.5.0",
+    "prettier": "2.1.2",
+    "pretty-quick": "3.1.0",
+    "raw-loader": "4.0.2",
+    "three": "0.132.2",
+    "ts-loader": "8.0.11",
+    "ts-node": "9.0.0",
+    "typescript": "4.0.5",
+    "webpack": "4.44.2",
+    "webpack-cli": "4.8.0",
+    "webpack-dev-server": "3.11.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint && git update-index --again && pretty-quick --staged"
+    }
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 80
+  }
+}

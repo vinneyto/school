@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": true,
+    "jsx": "react",
+    "lib": ["DOM", "ESNext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": []
+  },
+  "include": ["webpack.config.ts", "src"],
+  "ts-node": {
+    "transpileOnly": true
+  }
+}
