@@ -2,12 +2,15 @@
 
     cargo run --bin one_weekend --release
     cargo run --bin one_weekend --features="precise" --release
-    
+
     cargo run --bin next_week --release
     cargo run --bin next_week --features="precise" --release
 
     cargo run --bin next_week --release -- cornell
     cargo run --bin next_week --features="precise" --release -- cornell
+
+    cargo run --bin rest_of_your_life --release -- cornell
+    cargo run --bin rest_of_your_life --features="precise" --release -- cornell
 
 # How to extreact data from three mesh
 
