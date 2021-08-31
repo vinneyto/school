@@ -53,6 +53,7 @@ export default {
     port: 9001,
     open: true,
     noInfo: true,
+    historyApiFallback: true,
   },
   plugins,
   optimization: {
