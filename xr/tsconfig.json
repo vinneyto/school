@@ -14,11 +14,8 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "strict": true,
-    "target": "ESNext",
-    "types": []
+    "target": "ESNext"
   },
   "include": ["webpack.config.ts", "src"],
-  "ts-node": {
-    "transpileOnly": true
-  }
+  "exclude": ["node_modules"]
 }

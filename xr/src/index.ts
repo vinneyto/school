@@ -1,6 +1,7 @@
 import jss from 'jss';
 import preset from 'jss-preset-default';
-import { VRBallDemo } from './demo/VRBallDemo';
+import { demoARBall } from './demo/demoARBall';
+import { demoVRBall } from './demo/demoVRBall';
 import reset from './styles/reset';
 import { styles } from './styles/style';
 
@@ -11,10 +12,13 @@ const { classes } = jss.createStyleSheet(styles).attach();
 
 interface Demo {
   name: string;
-  ctor: new () => void;
+  start: () => void;
 }
 
-const demos: Demo[] = [{ name: 'vr-ball', ctor: VRBallDemo }];
+const demos: Demo[] = [
+  { name: 'vr-ball', start: demoVRBall },
+  { name: 'ar-ball', start: demoARBall },
+];
 
 if (window.location.pathname === '/') {
   for (const demo of demos) {
@@ -27,7 +31,7 @@ if (window.location.pathname === '/') {
 } else {
   const demo = demos.find((d) => `/${d.name}` === window.location.pathname);
   if (demo !== undefined) {
-    new demo.ctor();
+    demo.start();
   } else {
     document.body.innerHTML = 'unable to find demo!!!';
   }

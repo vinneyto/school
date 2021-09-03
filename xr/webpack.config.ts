@@ -3,16 +3,17 @@ import CompressionPlugin from 'compression-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
-import { Plugin } from 'webpack';
 
 const debug = process.env.NODE_ENV !== 'production';
 
-const plugins: Plugin[] = [
+const plugins = [
   new HtmlWebpackPlugin({
     title: 'xr',
     favicon: './assets/favicon.ico',
     meta: {
-      viewport: 'width=device-width, initial-scale=1, shrink-to-fit=no',
+      viewport: 'width=device-width, initial-scale=1, user-scalable=no',
+      'mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-capable': 'yes',
     },
   }),
   new CleanWebpackPlugin(),
@@ -48,11 +49,10 @@ export default {
       { test: /\.bin|png|svg|jpg|gif|glb/, loader: 'file-loader' },
     ],
   },
+  stats: 'errors-only',
   devServer: {
-    contentBase: path.join(__dirname, 'dist'),
     port: 9001,
     open: true,
-    noInfo: true,
     historyApiFallback: true,
   },
   plugins,
