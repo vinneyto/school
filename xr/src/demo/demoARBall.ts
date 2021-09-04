@@ -94,14 +94,20 @@ export async function demoARBall() {
   function onXRFrame(time: DOMHighResTimeStamp, frame: XRFrame) {
     xrSession.requestAnimationFrame(onXRFrame);
 
-    const framebuffer = xrSession.renderState.baseLayer!.framebuffer;
+    const { baseLayer } = xrSession.renderState;
+
+    if (baseLayer === undefined) {
+      throw new Error('baseLayer is undefined');
+    }
+
+    const framebuffer = baseLayer.framebuffer;
     renderer.state.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
     const pose = frame.getViewerPose(localReferenceSpace);
     if (pose) {
       const view = pose.views[0];
 
-      const viewport = xrSession.renderState.baseLayer!.getViewport(view);
+      const viewport = baseLayer.getViewport(view);
       renderer.setSize(viewport.width, viewport.height);
 
       camera.matrix.fromArray(view.transform.matrix);
