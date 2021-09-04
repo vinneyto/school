@@ -83,13 +83,19 @@ pub fn ray_color<T: Hittable>(ray: &Ray, background: &Color, world: &T, depth: i
 
         let material = rec.material.clone().unwrap();
         let mut scattered = Ray::default();
-        let mut attenuation = Color::default();
+        let mut albedo = Color::default();
         let emitted = material.emitted(&rec);
-        if !material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
+        let mut pdf = 0.0;
+
+        if !material.scatter(&ray, &rec, &mut albedo, &mut scattered, &mut pdf) {
             return emitted;
         }
 
-        return emitted + attenuation * ray_color(&scattered, &background, world, depth - 1);
+        return emitted
+            + albedo
+                * material.scattering_pdf(&ray, &rec, &mut scattered)
+                * ray_color(&scattered, &background, world, depth - 1)
+                / pdf;
     }
 
     *background

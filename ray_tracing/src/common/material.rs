@@ -19,9 +19,14 @@ pub trait Material: Sync + Send {
         &self,
         ray_in: &Ray,
         hit_record: &HitRecord,
-        attenuation: &mut Color,
+        alb: &mut Color,
         scattered: &mut Ray,
+        pdf: &mut f32,
     ) -> bool;
+
+    fn scattering_pdf(&self, _ray_in: &Ray, _hit_record: &HitRecord, _scattered: &mut Ray) -> f32 {
+        0.0
+    }
 
     fn emitted(&self, _rec: &HitRecord) -> Color {
         Color::new(0.0, 0.0, 0.0)
@@ -43,18 +48,29 @@ impl Material for Lambertian {
         &self,
         _: &Ray,
         rec: &HitRecord,
-        attenuation: &mut Color,
+        alb: &mut Color,
         scattered: &mut Ray,
+        pdf: &mut f32,
     ) -> bool {
-        let mut scatter_direction = rec.normal + random_in_unit_sphere().unit_vector();
+        let mut scatter_direction = rec.normal + random_unit_vector();
 
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal;
         }
 
-        *scattered = Ray::new(rec.p, scatter_direction);
-        *attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
+        *scattered = Ray::new(rec.p, scatter_direction.unit_vector());
+        *alb = self.albedo.value(rec.u, rec.v, &rec.p);
+        *pdf = rec.normal.dot(scattered.dir) / std::f32::consts::PI;
         true
+    }
+
+    fn scattering_pdf(&self, _ray_in: &Ray, rec: &HitRecord, scattered: &mut Ray) -> f32 {
+        let cosine = rec.normal.dot(scattered.dir.unit_vector());
+        if cosine < 0.0 {
+            0.0
+        } else {
+            cosine / std::f32::consts::PI
+        }
     }
 }
 
@@ -77,6 +93,7 @@ impl Material for Metal {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        _pdf: &mut f32,
     ) -> bool {
         let reflected = ray_in.dir.unit_vector().reflect(rec.normal);
         *scattered = Ray::new(
@@ -109,6 +126,7 @@ impl Material for Dielectric {
         rec: &HitRecord,
         attenuation: &mut Color,
         scattered: &mut Ray,
+        _pdf: &mut f32,
     ) -> bool {
         *attenuation = Color::new(1.0, 1.0, 1.0);
         let refraction_ratio = if rec.front_face {
@@ -166,6 +184,7 @@ impl Material for DiffuseLight {
         _rec: &HitRecord,
         _attenuation: &mut Color,
         _scattered: &mut Ray,
+        _pdf: &mut f32,
     ) -> bool {
         false
     }
@@ -211,6 +230,7 @@ impl Material for DebugMaterial {
         _rec: &HitRecord,
         _attenuation: &mut Color,
         _scattered: &mut Ray,
+        _pdf: &mut f32,
     ) -> bool {
         false
     }

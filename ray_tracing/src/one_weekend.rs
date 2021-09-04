@@ -102,8 +102,9 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Color {
         let material = rec.material.clone().unwrap();
         let mut scattered = Ray::default();
         let mut attenuation = Color::default();
+        let mut pdf = 0.0;
 
-        if material.scatter(&ray, &rec, &mut attenuation, &mut scattered) {
+        if material.scatter(&ray, &rec, &mut attenuation, &mut scattered, &mut pdf) {
             return attenuation * ray_color(&scattered, world, depth - 1);
         }
 
