@@ -10,7 +10,6 @@ import {
   SphereBufferGeometry,
   WebGLRenderer,
 } from 'three';
-import { Navigator, XRFrame, XRReferenceSpace, XRSession } from 'webxr';
 
 const { classes } = jss
   .createStyleSheet({
@@ -26,7 +25,10 @@ const { classes } = jss
   .attach();
 
 export async function demoARBall() {
-  const xr = ((navigator as unknown) as Navigator).xr;
+  if (navigator.xr === undefined) {
+    throw new Error('webxr is not supported');
+  }
+  const { xr } = navigator;
   const isArSessionSupported = await xr.isSessionSupported('immersive-ar');
 
   const xrButton = document.createElement('button');
@@ -69,8 +71,7 @@ export async function demoARBall() {
     }
 
     xrSession.updateRenderState({
-      // @ts-ignore
-      baseLayer: new XRWebGLLayer(xrSession, gl),
+      baseLayer: new XRWebGLLayer(xrSession, gl, {}),
       depthNear: 0.1,
       depthFar: 1000,
     });

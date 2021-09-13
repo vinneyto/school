@@ -43,8 +43,18 @@ export default {
   },
   module: {
     rules: [
-      { test: /\.ts/, loader: 'ts-loader' },
-      { test: /\.glsl/, loader: 'raw-loader' },
+      {
+        test: /\.ts/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+        options: {
+          transpileOnly: true,
+          compilerOptions: {
+            isolatedModules: true,
+          },
+        },
+      },
+      { test: /\.glsl|wgsl/, loader: 'raw-loader' },
       { test: /\.gltf/, loader: 'gltf-webpack-loader' },
       { test: /\.bin|png|svg|jpg|gif|glb/, loader: 'file-loader' },
     ],

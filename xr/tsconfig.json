@@ -16,6 +16,11 @@
     "strict": true,
     "target": "ESNext"
   },
-  "include": ["webpack.config.ts", "src"],
-  "exclude": ["node_modules"]
+  "include": [
+    "definitions.d.ts",
+    "webpack.config.ts",
+    "src/**/*",
+    "node_modules/@webgpu/types/**/*",
+    "node_modules/@google/model-viewer/src/types/webxr.ts"
+  ]
 }

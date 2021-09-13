@@ -2,6 +2,7 @@ import jss from 'jss';
 import preset from 'jss-preset-default';
 import { demoARBall } from './demo/demoARBall';
 import { demoVRBall } from './demo/demoVRBall';
+import { demoWebGPU } from './demo/demoWebGPU';
 import reset from './styles/reset';
 import { styles } from './styles/style';
 
@@ -18,6 +19,7 @@ interface Demo {
 const demos: Demo[] = [
   { name: 'vr-ball', start: demoVRBall },
   { name: 'ar-ball', start: demoARBall },
+  { name: 'webgpu-demo', start: demoWebGPU },
 ];
 
 if (window.location.pathname === '/') {
